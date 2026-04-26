@@ -128,7 +128,7 @@ io.on('connection', (socket) => {
 setInterval(updateOnlineCount, 10000);
 
 // Fallback route for SPA - serves index.html for any unknown routes
-app.get('*', (req, res) => {
+app.get('/*path', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
