@@ -128,11 +128,11 @@ io.on('connection', (socket) => {
 setInterval(updateOnlineCount, 10000);
 
 // Fallback route for SPA - serves index.html for any unknown routes
-app.get('/*path', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
