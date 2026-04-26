@@ -1,0 +1,27 @@
+{
+  "name": "omegle",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "lucide": "^0.473.0",
+    "peerjs": "^1.5.4",
+    "redis": "^5.12.1",
+    "sentiment": "^5.0.2",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "vite": "^8.0.10"
+  }
+}
