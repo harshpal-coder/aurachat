@@ -1,0 +1,20 @@
+{
+  "name": "aurachat-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide": "^0.473.0",
+    "peerjs": "^1.5.4",
+    "sentiment": "^5.0.2",
+    "socket.io-client": "^4.8.3"
+  },
+  "devDependencies": {
+    "vite": "^8.0.10"
+  }
+}

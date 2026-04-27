@@ -12,8 +12,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(cors());
 
-// Serve static files from the Vite build output directory
-app.use(express.static(path.join(__dirname, 'dist')));
+// Serve static files from the Vite build output directory (frontend/dist)
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -128,11 +128,11 @@ io.on('connection', (socket) => {
 setInterval(updateOnlineCount, 10000);
 
 // Fallback route for SPA - serves index.html for any unknown routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'dist', 'index.html'));
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

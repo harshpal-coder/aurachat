@@ -337,10 +337,8 @@ class AuraChat {
   }
 
   initSocket() {
-    // Connect to the same origin in production, or fallback to localhost:3001 for development
-    const socketUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:3001' 
-      : window.location.origin;
+    // Using window.location.hostname to be more flexible, but fallback to localhost
+    const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`;
     this.socket = io(socketUrl);
 
     this.socket.on('connect', () => {
