@@ -337,8 +337,9 @@ class AuraChat {
   }
 
   initSocket() {
-    // Using window.location.hostname to be more flexible, but fallback to localhost
-    const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`;
+    // Use VITE_BACKEND_URL from environment if available, otherwise fallback
+    const envUrl = import.meta.env.VITE_BACKEND_URL;
+    const socketUrl = envUrl || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`);
     this.socket = io(socketUrl);
 
     this.socket.on('connect', () => {
