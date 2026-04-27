@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://aurachat.io/sitemap.xml
+Sitemap: https://auraxchat.vercel.app/sitemap.xml

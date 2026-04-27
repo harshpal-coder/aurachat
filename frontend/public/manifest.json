@@ -1,0 +1,17 @@
+{
+  "name": "AuraChat | Unfiltered Random Chat",
+  "short_name": "AuraChat",
+  "description": "Best Omegle Alternative - Anonymous, unfiltered random text chat.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

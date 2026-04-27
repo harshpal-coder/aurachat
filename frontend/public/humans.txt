@@ -1,0 +1,14 @@
+/* TEAM */
+Chef: AuraChat Labs
+Contact: ogwteam@proton.me
+Location: The Void
+
+/* THANKS */
+Users: For being highkey unhinged.
+Tech: PeerJS, Socket.io, Lucide.
+
+/* SITE */
+Last update: 2026/04/27
+Standards: HTML5, CSS3, JavaScript
+Components: Glassmorphism, P2P
+Software: Vite
