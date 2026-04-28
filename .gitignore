@@ -22,6 +22,9 @@ frontend/dist-ssr
 .env.*
 !.env.example
 backend/service-account.json
+backend/client_secret.json
+backend/token.json
+backend/logs/
 
 # Editor directories and files
 .vscode/*

@@ -2,49 +2,78 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import readline from 'readline';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to your service account credentials file
-const KEY_FILE_PATH = path.join(__dirname, 'service-account.json');
+// Paths for credentials
+const CLIENT_SECRET_PATH = path.join(__dirname, 'client_secret.json');
+const TOKEN_PATH = path.join(__dirname, 'token.json');
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
-// Replace with your Google Drive Folder ID
-const FOLDER_ID = '12576U2OJs2D3zv7luOsuD62DEFpfr6GS';
+const FOLDER_ID = '12576U2OJs2D3zv7luOsuD62DEFpfr6GS'; 
 
 let drive = null;
 
-const initDrive = () => {
-  if (drive) return drive;
-
-  if (!fs.existsSync(KEY_FILE_PATH)) {
-    console.warn('Google Drive service-account.json not found. Drive uploads disabled.');
+const getAuthClient = async () => {
+  if (!fs.existsSync(CLIENT_SECRET_PATH)) {
+    console.warn('client_secret.json not found. Drive uploads disabled.');
     return null;
   }
 
-  try {
-    const auth = new google.auth.GoogleAuth({
-      keyFile: KEY_FILE_PATH,
-      scopes: SCOPES,
+  const content = fs.readFileSync(CLIENT_SECRET_PATH);
+  const credentials = JSON.parse(content);
+  const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
+  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris ? redirect_uris[0] : 'http://localhost');
+
+  if (fs.existsSync(TOKEN_PATH)) {
+    const token = fs.readFileSync(TOKEN_PATH);
+    oAuth2Client.setCredentials(JSON.parse(token));
+    return oAuth2Client;
+  }
+
+  // If no token exists, we need to authorize (this should be done manually once)
+  return await getNewToken(oAuth2Client);
+};
+
+const getNewToken = (oAuth2Client) => {
+  return new Promise((resolve) => {
+    const authUrl = oAuth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: SCOPES,
     });
-    drive = google.drive({ version: 'v3', auth });
-    console.log('Google Drive API initialized.');
-    return drive;
-  } catch (error) {
-    console.error('Failed to initialize Google Drive API:', error);
-    return null;
-  }
+    console.log('\n--- GOOGLE DRIVE AUTHORIZATION REQUIRED ---');
+    console.log('1. Open this link in your browser:', authUrl);
+    
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.question('2. Enter the code from that page here: ', (code) => {
+      rl.close();
+      oAuth2Client.getToken(code, (err, token) => {
+        if (err) return console.error('Error retrieving access token', err);
+        oAuth2Client.setCredentials(token);
+        fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
+        console.log('Token stored to', TOKEN_PATH);
+        resolve(oAuth2Client);
+      });
+    });
+  });
 };
 
 export const uploadToDrive = async (fileName, fileContent) => {
-  const driveInstance = initDrive();
-  if (!driveInstance) return;
-
   try {
+    const auth = await getAuthClient();
+    if (!auth) return;
+
+    const driveInstance = google.drive({ version: 'v3', auth });
+
     const fileMetadata = {
       name: fileName,
-      parents: FOLDER_ID !== 'YOUR_GOOGLE_DRIVE_FOLDER_ID' ? [FOLDER_ID] : [],
+      parents: [FOLDER_ID],
     };
 
     const media = {
