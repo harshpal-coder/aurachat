@@ -29,10 +29,14 @@ let waitingUsers = [];
 let activeMatches = new Map(); // socket.id -> { partnerSocketId, partnerPeerId, matchId }
 let matchLogs = new Map(); // matchId -> { startTime, messages: [] }
 
-// Ensure logs directory exists
+// Ensure logs directory exists (Optional for production)
 const logsDir = path.join(__dirname, 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir);
+try {
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir);
+  }
+} catch (e) {
+  console.warn('Could not create local logs directory (this is normal in production):', e.message);
 }
 
 const saveLog = (matchId) => {
@@ -50,13 +54,15 @@ const saveLog = (matchId) => {
   const header = `Chat Session: ${matchId}\nStarted: ${log.startTime}\nEnded: ${new Date().toISOString()}\n-----------------------------------\n`;
   const fullContent = header + logContent;
 
-  // 1. Save locally
-  fs.writeFile(filePath, fullContent, (err) => {
-    if (err) console.error(`Error saving local log ${filename}:`, err);
-    else console.log(`Saved local chat log: ${filename}`);
-  });
+  // 1. Save locally (if possible)
+  if (fs.existsSync(logsDir)) {
+    fs.writeFile(filePath, fullContent, (err) => {
+      if (err) console.error(`Error saving local log ${filename}:`, err);
+      else console.log(`Saved local chat log: ${filename}`);
+    });
+  }
 
-  // 2. Upload to Google Drive
+  // 2. Upload to Google Drive (Independent of local save)
   uploadToDrive(filename, fullContent);
 
   matchLogs.delete(matchId);

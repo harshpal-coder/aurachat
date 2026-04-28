@@ -22,24 +22,29 @@ const getAuthClient = async () => {
 
   // 1. Try Environment Variables (for Production)
   if (process.env.GDRIVE_CLIENT_SECRET) {
+    console.log('Detected GDRIVE_CLIENT_SECRET environment variable...');
     try {
       credentials = JSON.parse(process.env.GDRIVE_CLIENT_SECRET);
       if (process.env.GDRIVE_TOKEN) {
+        console.log('Detected GDRIVE_TOKEN environment variable...');
         token = JSON.parse(process.env.GDRIVE_TOKEN);
+      } else {
+        console.warn('GDRIVE_TOKEN environment variable is MISSING.');
       }
     } catch (e) {
-      console.error('Error parsing Google Drive environment variables:', e);
+      console.error('CRITICAL: Error parsing Google Drive environment variables. Make sure you pasted the full JSON content.', e.message);
     }
   }
 
   // 2. Fallback to Local Files (for Development)
   if (!credentials && fs.existsSync(CLIENT_SECRET_PATH)) {
+    console.log('Using local client_secret.json for Google Drive...');
     const content = fs.readFileSync(CLIENT_SECRET_PATH);
     credentials = JSON.parse(content);
   }
 
   if (!credentials) {
-    console.warn('Google Drive credentials not found (env or file). Drive uploads disabled.');
+    console.warn('Google Drive credentials NOT FOUND (no env var or file). Drive uploads are disabled.');
     return null;
   }
 
@@ -52,13 +57,19 @@ const getAuthClient = async () => {
   }
 
   if (!token && fs.existsSync(TOKEN_PATH)) {
+    console.log('Using local token.json for Google Drive...');
     const localToken = fs.readFileSync(TOKEN_PATH);
     oAuth2Client.setCredentials(JSON.parse(localToken));
     return oAuth2Client;
   }
 
   // If no token exists anywhere, we need to authorize (only works locally)
-  return await getNewToken(oAuth2Client);
+  if (!process.env.GDRIVE_CLIENT_SECRET) {
+    return await getNewToken(oAuth2Client);
+  } else {
+    console.error('ERROR: No Google Drive token found in environment variables. Uploads will fail in production.');
+    return null;
+  }
 };
 
 const getNewToken = (oAuth2Client) => {
