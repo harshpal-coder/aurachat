@@ -17,23 +17,47 @@ const FOLDER_ID = '12576U2OJs2D3zv7luOsuD62DEFpfr6GS';
 let drive = null;
 
 const getAuthClient = async () => {
-  if (!fs.existsSync(CLIENT_SECRET_PATH)) {
-    console.warn('client_secret.json not found. Drive uploads disabled.');
+  let credentials;
+  let token;
+
+  // 1. Try Environment Variables (for Production)
+  if (process.env.GDRIVE_CLIENT_SECRET) {
+    try {
+      credentials = JSON.parse(process.env.GDRIVE_CLIENT_SECRET);
+      if (process.env.GDRIVE_TOKEN) {
+        token = JSON.parse(process.env.GDRIVE_TOKEN);
+      }
+    } catch (e) {
+      console.error('Error parsing Google Drive environment variables:', e);
+    }
+  }
+
+  // 2. Fallback to Local Files (for Development)
+  if (!credentials && fs.existsSync(CLIENT_SECRET_PATH)) {
+    const content = fs.readFileSync(CLIENT_SECRET_PATH);
+    credentials = JSON.parse(content);
+  }
+
+  if (!credentials) {
+    console.warn('Google Drive credentials not found (env or file). Drive uploads disabled.');
     return null;
   }
 
-  const content = fs.readFileSync(CLIENT_SECRET_PATH);
-  const credentials = JSON.parse(content);
   const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
   const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris ? redirect_uris[0] : 'http://localhost');
 
-  if (fs.existsSync(TOKEN_PATH)) {
-    const token = fs.readFileSync(TOKEN_PATH);
-    oAuth2Client.setCredentials(JSON.parse(token));
+  if (token) {
+    oAuth2Client.setCredentials(token);
     return oAuth2Client;
   }
 
-  // If no token exists, we need to authorize (this should be done manually once)
+  if (!token && fs.existsSync(TOKEN_PATH)) {
+    const localToken = fs.readFileSync(TOKEN_PATH);
+    oAuth2Client.setCredentials(JSON.parse(localToken));
+    return oAuth2Client;
+  }
+
+  // If no token exists anywhere, we need to authorize (only works locally)
   return await getNewToken(oAuth2Client);
 };
 
