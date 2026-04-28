@@ -21,6 +21,7 @@ frontend/dist-ssr
 .env
 .env.*
 !.env.example
+backend/service-account.json
 
 # Editor directories and files
 .vscode/*

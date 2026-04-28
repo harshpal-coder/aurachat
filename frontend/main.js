@@ -448,6 +448,12 @@ class AuraChat {
     if (this.dataConn && this.dataConn.open) {
       this.dataConn.send({ type: 'chat', text });
       this.addChatMessage('You', text);
+      
+      // Emit to server for logging
+      if (this.socket) {
+        this.socket.emit('chat_message', text);
+      }
+      
       this.chatInput.value = '';
       this.handleMoodInference(text, true);
     } else {
@@ -476,6 +482,12 @@ class AuraChat {
       const imageData = event.target.result;
       this.dataConn.send({ type: 'image', imageData });
       this.addImageMessage('You', imageData);
+      
+      // Emit to server for logging (just a placeholder for image)
+      if (this.socket) {
+        this.socket.emit('chat_message', '[Sent an image]');
+      }
+      
       this.imageInput.value = '';
     };
     reader.readAsDataURL(file);

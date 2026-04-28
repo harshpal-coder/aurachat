@@ -5,6 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { uploadToDrive } from './driveService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,41 @@ const io = new Server(httpServer, {
 });
 
 let waitingUsers = [];
-let activeMatches = new Map(); // socket.id -> { partnerSocketId, partnerPeerId }
+let activeMatches = new Map(); // socket.id -> { partnerSocketId, partnerPeerId, matchId }
+let matchLogs = new Map(); // matchId -> { startTime, messages: [] }
+
+// Ensure logs directory exists
+const logsDir = path.join(__dirname, 'logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir);
+}
+
+const saveLog = (matchId) => {
+  const log = matchLogs.get(matchId);
+  if (!log || log.messages.length === 0) {
+    matchLogs.delete(matchId);
+    return;
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `chat_${timestamp}_${matchId}.txt`;
+  const filePath = path.join(logsDir, filename);
+
+  const logContent = log.messages.map(m => `[${m.time}] ${m.sender}: ${m.text}`).join('\n');
+  const header = `Chat Session: ${matchId}\nStarted: ${log.startTime}\nEnded: ${new Date().toISOString()}\n-----------------------------------\n`;
+  const fullContent = header + logContent;
+
+  // 1. Save locally
+  fs.writeFile(filePath, fullContent, (err) => {
+    if (err) console.error(`Error saving local log ${filename}:`, err);
+    else console.log(`Saved local chat log: ${filename}`);
+  });
+
+  // 2. Upload to Google Drive
+  uploadToDrive(filename, fullContent);
+
+  matchLogs.delete(matchId);
+};
 
 const updateOnlineCount = () => {
   const realCount = io.sockets.sockets.size;
@@ -48,8 +83,16 @@ io.on('connection', (socket) => {
     const match = activeMatches.get(socket.id);
     if (match) {
       const partnerSocketId = match.partnerSocketId;
+      const matchId = match.matchId;
+      
       activeMatches.delete(socket.id);
       activeMatches.delete(partnerSocketId);
+
+      // Save log if it hasn't been saved yet (one call to endMatch will handle it)
+      if (matchLogs.has(matchId)) {
+        saveLog(matchId);
+      }
+
       return partnerSocketId;
     }
     return null;
@@ -93,13 +136,43 @@ io.on('connection', (socket) => {
     }
 
     if (matchedPartner) {
-      activeMatches.set(socket.id, { partnerSocketId: matchedPartner.socketId, partnerPeerId: matchedPartner.peerId });
-      activeMatches.set(matchedPartner.socketId, { partnerSocketId: socket.id, partnerPeerId: peerId });
+      const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
       
+      activeMatches.set(socket.id, { 
+        partnerSocketId: matchedPartner.socketId, 
+        partnerPeerId: matchedPartner.peerId,
+        matchId: matchId
+      });
+      activeMatches.set(matchedPartner.socketId, { 
+        partnerSocketId: socket.id, 
+        partnerPeerId: peerId,
+        matchId: matchId
+      });
+      
+      // Initialize log
+      matchLogs.set(matchId, {
+        startTime: new Date().toISOString(),
+        messages: []
+      });
+
       socket.emit('match', { partnerPeerId: matchedPartner.peerId, initiateCall: true });
       io.to(matchedPartner.socketId).emit('match', { partnerPeerId: peerId, initiateCall: false });
     } else {
       waitingUsers.push({ socketId: socket.id, peerId: peerId, interests: userInterests });
+    }
+  });
+
+  socket.on('chat_message', (text) => {
+    const match = activeMatches.get(socket.id);
+    if (match && match.matchId) {
+      const log = matchLogs.get(match.matchId);
+      if (log) {
+        log.messages.push({
+          sender: socket.id,
+          text: text,
+          time: new Date().toLocaleTimeString()
+        });
+      }
     }
   });
 
