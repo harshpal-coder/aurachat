@@ -4,6 +4,15 @@ import Peer from 'peerjs';
 import { io } from 'socket.io-client';
 import Sentiment from 'sentiment';
 
+// Register Service Worker for PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.log('Service Worker registration failed: ', err);
+    });
+  });
+}
+
 class Omego {
   constructor() {
     this.peer = null;

@@ -6,23 +6,46 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { uploadToDrive } from './driveService.js';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
 const app = express();
-app.use(cors());
+
+// Production Security & Performance
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled for Socket.io and PeerJS compatibility
+}));
+app.use(compression());
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  message: "Too many requests from this IP, please try again later."
+});
+app.use('/api/', limiter); // Apply to API routes if any
+
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || "*",
+  methods: ["GET", "POST"],
+  credentials: true
+};
+app.use(cors(corsOptions));
 
 // Serve static files from the Vite build output directory (frontend/dist)
 app.use(express.static(path.join(__dirname, '..', 'frontend', 'dist')));
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: {
-    origin: "*", 
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
 
 let waitingUsers = [];
