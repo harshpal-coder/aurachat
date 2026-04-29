@@ -214,9 +214,15 @@ class AuraChat {
     this.chatPage.classList.remove('hidden');
     this.chatPage.classList.add('fade-in');
     
-    // Hide global footer in chat mode for better mobile responsiveness
+    // Optimize layout for chat: Hide main header and footer
+    const globalHeader = document.querySelector('.app-header');
     const globalFooter = document.querySelector('.app-footer');
+    if (globalHeader) globalHeader.classList.add('hidden');
     if (globalFooter) globalFooter.classList.add('hidden');
+    
+    // Remove padding from app-main to allow full-bleed chat
+    const appMain = document.querySelector('.app-main');
+    if (appMain) appMain.style.paddingTop = '0';
 
     // Re-initialize icons to ensure they render correctly in the newly visible section
     createIcons({
@@ -412,8 +418,11 @@ class AuraChat {
     this.clearChat();
     this.addSystemMessage('Searching for a new stranger...');
     
-    // Ensure global footer is hidden if we somehow returned to landing
+    // Re-show header/footer if we were to return to landing, 
+    // though findNewPartner usually stays in chat mode.
+    const globalHeader = document.querySelector('.app-header');
     const globalFooter = document.querySelector('.app-footer');
+    if (globalHeader) globalHeader.classList.add('hidden'); // Keep hidden in chat
     if (globalFooter) globalFooter.classList.add('hidden');
 
     this.handleDisconnect(true); // true means we are re-searching
