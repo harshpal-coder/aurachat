@@ -1,5 +1,5 @@
 import './style.css';
-import { createIcons, Send, Github, Sun, Moon, Image as ImageIcon } from 'lucide';
+import { createIcons, Send, Github, Sun, Moon, Image as ImageIcon, SkipForward } from 'lucide';
 import Peer from 'peerjs';
 import { io } from 'socket.io-client';
 import Sentiment from 'sentiment';
@@ -89,7 +89,7 @@ class AuraChat {
 
   init() {
     createIcons({
-      icons: { Send, Github, Sun, Moon, image: ImageIcon }
+      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward }
     });
 
     if (this.startTextBtn) this.startTextBtn.addEventListener('click', () => this.startSession('text'));
@@ -226,7 +226,7 @@ class AuraChat {
 
     // Re-initialize icons to ensure they render correctly in the newly visible section
     createIcons({
-      icons: { Send, Github, Sun, Moon, image: ImageIcon }
+      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward }
     });
 
     // this.currentMode is already set in startSession
