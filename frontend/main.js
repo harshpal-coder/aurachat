@@ -213,6 +213,10 @@ class AuraChat {
     this.landingPage.classList.add('hidden');
     this.chatPage.classList.remove('hidden');
     this.chatPage.classList.add('fade-in');
+    
+    // Hide global footer in chat mode for better mobile responsiveness
+    const globalFooter = document.querySelector('.app-footer');
+    if (globalFooter) globalFooter.classList.add('hidden');
 
     // Re-initialize icons to ensure they render correctly in the newly visible section
     createIcons({
@@ -407,6 +411,11 @@ class AuraChat {
 
     this.clearChat();
     this.addSystemMessage('Searching for a new stranger...');
+    
+    // Ensure global footer is hidden if we somehow returned to landing
+    const globalFooter = document.querySelector('.app-footer');
+    if (globalFooter) globalFooter.classList.add('hidden');
+
     this.handleDisconnect(true); // true means we are re-searching
 
     this.updateStatus('Searching...');
