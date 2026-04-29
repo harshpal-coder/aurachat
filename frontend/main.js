@@ -1,5 +1,5 @@
 import './style.css';
-import { createIcons, Send, Github, Sun, Moon, Image as ImageIcon, SkipForward } from 'lucide';
+import { createIcons, Send, Github, Sun, Moon, Image as ImageIcon, SkipForward, PlayCircle } from 'lucide';
 import Peer from 'peerjs';
 import { io } from 'socket.io-client';
 import Sentiment from 'sentiment';
@@ -42,6 +42,10 @@ class Omego {
     this.onlineCountVal = document.getElementById('online-count-val');
     this.imageBtn = document.getElementById('image-btn');
     this.imageInput = document.getElementById('image-input');
+    this.watchTogetherBtn = document.getElementById('watch-together-btn');
+    this.videoOverlay = document.getElementById('video-overlay');
+    this.videoContent = document.getElementById('video-content');
+    this.closeVideoBtn = document.getElementById('close-video');
 
     // Modal Elements
     this.modalContainer = document.getElementById('modal-container');
@@ -98,7 +102,7 @@ class Omego {
 
   init() {
     createIcons({
-      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward }
+      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward, PlayCircle }
     });
 
     if (this.startTextBtn) this.startTextBtn.addEventListener('click', () => this.startSession('text'));
@@ -149,6 +153,14 @@ class Omego {
 
     if (this.imageInput) {
       this.imageInput.addEventListener('change', (e) => this.handleImageSelect(e));
+    }
+
+    if (this.watchTogetherBtn) {
+      this.watchTogetherBtn.addEventListener('click', () => this.promptVideoLink());
+    }
+
+    if (this.closeVideoBtn) {
+      this.closeVideoBtn.addEventListener('click', () => this.toggleVideoOverlay(false));
     }
 
     if (this.reactionToggle) {
@@ -235,7 +247,7 @@ class Omego {
 
     // Re-initialize icons to ensure they render correctly in the newly visible section
     createIcons({
-      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward }
+      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward, PlayCircle }
     });
 
     // this.currentMode is already set in startSession
@@ -321,6 +333,12 @@ class Omego {
         this.showReaction(data.emoji);
       } else if (data.type === 'mood') {
         this.applyMood(data.mood);
+      } else if (data.type === 'video_start') {
+        this.startVideo(data.url, false);
+        this.addSystemMessage('Stranger started a Watch Together session.');
+      } else if (data.type === 'video_stop') {
+        this.toggleVideoOverlay(false, false);
+        this.addSystemMessage('Stranger closed the video player.');
       }
     });
 
@@ -511,6 +529,61 @@ class Omego {
       this.imageInput.value = '';
     };
     reader.readAsDataURL(file);
+  }
+
+  promptVideoLink() {
+    if (!this.dataConn || !this.dataConn.open) {
+      this.addSystemMessage('Connect with someone first to watch together, bestie.');
+      return;
+    }
+
+    const url = prompt("Paste the video URL (Direct link or YouTube):");
+    if (url && url.trim()) {
+      this.startVideo(url.trim(), true);
+    }
+  }
+
+  startVideo(url, shouldSync = false) {
+    this.toggleVideoOverlay(true);
+    
+    // Simple URL detection for embedding
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      const videoId = this.extractYoutubeId(url);
+      if (videoId) {
+        this.videoContent.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      } else {
+        this.addSystemMessage('Invalid YouTube URL.');
+        this.toggleVideoOverlay(false);
+        return;
+      }
+    } else {
+      // Treat as direct video link (MP4, WebM, etc.)
+      this.videoContent.innerHTML = `<video src="${url}" controls autoplay playsinline style="width:100%; height:100%;"></video>`;
+    }
+
+    if (shouldSync && this.dataConn && this.dataConn.open) {
+      this.dataConn.send({ type: 'video_start', url });
+    }
+  }
+
+  extractYoutubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }
+
+  toggleVideoOverlay(show, shouldSync = true) {
+    if (!this.videoOverlay) return;
+
+    if (show) {
+      this.videoOverlay.classList.remove('hidden');
+    } else {
+      this.videoOverlay.classList.add('hidden');
+      this.videoContent.innerHTML = ''; // Stop playback
+      if (shouldSync && this.dataConn && this.dataConn.open) {
+        this.dataConn.send({ type: 'video_stop' });
+      }
+    }
   }
 
   sendReaction(emoji) {
