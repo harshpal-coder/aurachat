@@ -1,5 +1,5 @@
 import './style.css';
-import { createIcons, Send, Github, Sun, Moon, Image as ImageIcon, SkipForward, PlayCircle } from 'lucide';
+import { createIcons, Send, Github, Sun, Moon, Image as ImageIcon, SkipForward, PlayCircle, Download } from 'lucide';
 import Peer from 'peerjs';
 import { io } from 'socket.io-client';
 import Sentiment from 'sentiment';
@@ -67,6 +67,9 @@ class Omego {
     this.reactionsTray = document.getElementById('reactions-tray');
     this.reactionsContainer = document.getElementById('reactions-container');
     this.reactionBtns = document.querySelectorAll('.reaction-btn');
+    this.pwaInstallBtn = document.getElementById('pwa-install-btn');
+
+    this.deferredPrompt = null;
 
 
     this.currentMode = null;
@@ -88,6 +91,8 @@ class Omego {
     this.applyInitialTheme();
     this.init();
     this.initSocket();
+    this.handlePWAEvents();
+    this.checkShortcuts();
   }
 
   applyInitialTheme() {
@@ -102,7 +107,7 @@ class Omego {
 
   init() {
     createIcons({
-      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward, PlayCircle }
+      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward, PlayCircle, Download }
     });
 
     if (this.startTextBtn) this.startTextBtn.addEventListener('click', () => this.startSession('text'));
@@ -247,7 +252,7 @@ class Omego {
 
     // Re-initialize icons to ensure they render correctly in the newly visible section
     createIcons({
-      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward, PlayCircle }
+      icons: { Send, Github, Sun, Moon, image: ImageIcon, SkipForward, PlayCircle, Download }
     });
 
     // this.currentMode is already set in startSession
@@ -594,6 +599,56 @@ class Omego {
       this.addSystemMessage('Connect with someone first to send reactions, bestie.');
     }
   }
+
+  handlePWAEvents() {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      this.deferredPrompt = e;
+      // Update UI notify the user they can install the PWA
+      if (this.pwaInstallBtn) {
+        this.pwaInstallBtn.classList.remove('hidden');
+        this.pwaInstallBtn.addEventListener('click', () => this.installPWA());
+      }
+    });
+
+    window.addEventListener('appinstalled', (evt) => {
+      // Log install to analytics or update UI
+      console.log('Omego was installed');
+      if (this.pwaInstallBtn) this.pwaInstallBtn.classList.add('hidden');
+      this.deferredPrompt = null;
+    });
+  }
+
+  async installPWA() {
+    if (!this.deferredPrompt) return;
+    
+    // Show the install prompt
+    this.deferredPrompt.prompt();
+    
+    // Wait for the user to respond to the prompt
+    const { outcome } = await this.deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    
+    // We've used the prompt, and can't use it again, throw it away
+    this.deferredPrompt = null;
+    if (this.pwaInstallBtn) this.pwaInstallBtn.classList.add('hidden');
+  }
+
+  checkShortcuts() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('start') === 'text') {
+      // Wait a bit for everything to init, then start
+      setTimeout(() => {
+        if (this.landingPage && !this.landingPage.classList.contains('hidden')) {
+          this.startSession('text');
+        }
+      }, 500);
+    }
+  }
+  
+  // ... rest of the file ...
 
   showReaction(emoji) {
     if (!this.reactionsContainer) return;

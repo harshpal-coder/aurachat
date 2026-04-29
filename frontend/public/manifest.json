@@ -1,11 +1,13 @@
 {
   "name": "Omego | Unfiltered Random Chat",
   "short_name": "Omego",
-  "description": "Best Omegle Alternative - Anonymous, unfiltered random text chat.",
+  "description": "Premium Omegle Alternative - Anonymous, unfiltered random text chat.",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
+  "categories": ["communication", "social"],
   "icons": [
     {
       "src": "/favicon.png",
@@ -13,5 +15,14 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Text Chat",
+      "url": "/?start=text",
+      "description": "Jump straight into a random text chat",
+      "icons": [{ "src": "/favicon.png", "sizes": "512x512" }]
+    }
   ]
 }
+
