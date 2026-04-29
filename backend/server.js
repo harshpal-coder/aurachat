@@ -213,7 +213,7 @@ app.get(/.*/, (req, res) => {
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.send('AuraChat Backend API is running.');
+    res.send('Omego Backend API is running.');
   }
 });
 

@@ -4,7 +4,7 @@ import Peer from 'peerjs';
 import { io } from 'socket.io-client';
 import Sentiment from 'sentiment';
 
-class AuraChat {
+class Omego {
   constructor() {
     this.peer = null;
     this.peerId = null;
@@ -747,4 +747,4 @@ class AuraChat {
   }
 }
 
-new AuraChat();
+new Omego();

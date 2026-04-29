@@ -213,7 +213,7 @@ body {
   color: var(--primary-color);
 }
 
-.aura-icon {
+.omego-icon {
   width: 32px;
   height: 32px;
   background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
@@ -610,7 +610,7 @@ body {
   .chat-header .logo h1 {
     font-size: 1.2rem;
   }
-  .chat-header .logo .aura-icon {
+  .chat-header .logo .omego-icon {
     width: 24px;
     height: 24px;
   }
@@ -630,7 +630,7 @@ body {
     font-size: 1.1rem;
   }
 
-  .chat-header .logo .aura-icon {
+  .chat-header .logo .omego-icon {
     width: 20px;
     height: 20px;
   }
@@ -659,7 +659,7 @@ body {
     display: none;
   }
 
-  .chat-header .logo .aura-icon {
+  .chat-header .logo .omego-icon {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
