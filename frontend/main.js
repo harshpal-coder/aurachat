@@ -368,7 +368,8 @@ class Omego {
     this.socket.on('online_count', (count) => {
       console.log('Online count update:', count);
       if (this.onlineCountVal) {
-        this.onlineCountVal.textContent = count.toLocaleString();
+        const start = parseInt(this.onlineCountVal.textContent.replace(/,/g, '')) || 0;
+        this.animateValue(this.onlineCountVal, start, count, 1000);
       }
     });
 
@@ -395,6 +396,20 @@ class Omego {
       this.addSystemMessage('Stranger disconnected.');
       this.handleDisconnect();
     });
+  }
+
+  animateValue(obj, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const current = Math.floor(progress * (end - start) + start);
+      obj.textContent = current.toLocaleString();
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
   }
 
   connectToMatchmaking(peerId) {
