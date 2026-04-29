@@ -93,11 +93,8 @@ const saveLog = (matchId) => {
 
 const updateOnlineCount = () => {
   const realCount = io.sockets.sockets.size;
-  // We add a realistic base number to make the site look "vibing" 
-  // but it still reflects real-time changes
-  const vibingCount = realCount + 6940; 
-  io.emit('online_count', vibingCount);
-  console.log(`Broadcasting online count: ${vibingCount} (Real: ${realCount})`);
+  io.emit('online_count', realCount);
+  console.log(`Broadcasting online count: ${realCount}`);
 };
 
 io.on('connection', (socket) => {

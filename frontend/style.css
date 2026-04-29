@@ -336,25 +336,17 @@ body {
 }
 
 .landing-content-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 2rem;
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 @media (max-width: 1024px) {
   .landing-content-wrapper {
-    grid-template-columns: 1fr;
     gap: 1.5rem;
-  }
-  
-  .controls-column {
-    position: relative;
-    top: 0;
-    order: -1;
-    margin-bottom: 0;
+    padding: 0 1rem;
   }
 }
 
@@ -362,11 +354,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-.controls-column {
-  position: sticky;
-  top: 0;
+  width: 100%;
 }
 
 .info-card {

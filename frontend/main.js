@@ -366,9 +366,9 @@ class Omego {
     });
 
     this.socket.on('online_count', (count) => {
-      console.log('Vibing count update:', count);
+      console.log('Online count update:', count);
       if (this.onlineCountVal) {
-        this.onlineCountVal.textContent = count.toLocaleString() + '+';
+        this.onlineCountVal.textContent = count.toLocaleString();
       }
     });
 
