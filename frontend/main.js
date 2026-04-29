@@ -242,9 +242,6 @@ class Omego {
     this.clearChat();
 
     const interests = this.interestsInput.value.trim();
-    if (interests) {
-      console.log(`User interests: ${interests}`);
-    }
 
     this.initPeer();
   }
@@ -267,16 +264,9 @@ class Omego {
     });
 
     this.peer.on('open', (id) => {
-      console.log('PEER OPEN EVENT FIRED. ID:', id);
       this.peerId = id;
       if (this.myIdSpan) this.myIdSpan.textContent = id;
       if (this.myIdAltSpan) this.myIdAltSpan.textContent = id;
-      if (this.peerIdDisplay) {
-        this.peerIdDisplay.style.display = 'block';
-        this.peerIdDisplay.title = `Full ID: ${id}`; // Show full ID on hover
-        console.log('Showing peer-id-display element');
-      }
-      this.addSystemMessage(`Your ID is ready: ${id}`);
       this.addSystemMessage(`You're now talking to a random stranger. Vibe check in progress...`);
 
       // Connect to Matchmaking Server
@@ -312,9 +302,7 @@ class Omego {
 
 
   setupDataHandlers(conn) {
-    console.log('Setting up data handlers for connection:', conn.peer);
     conn.on('open', () => {
-      console.log('Data connection opened with:', conn.peer);
       this.updateStatus('Connected');
       this.addSystemMessage("Match found! Don't be mid.");
     });
@@ -362,11 +350,10 @@ class Omego {
     this.socket = io(socketUrl);
 
     this.socket.on('connect', () => {
-      console.log('Connected to matchmaking server');
+      // Socket connected
     });
 
     this.socket.on('online_count', (count) => {
-      console.log('Online count update:', count);
       if (this.onlineCountVal) {
         const start = parseInt(this.onlineCountVal.textContent.replace(/,/g, '')) || 0;
         this.animateValue(this.onlineCountVal, start, count, 1000);
@@ -378,9 +365,7 @@ class Omego {
       this.updateStatus('Connecting...');
 
       if (data.initiateCall) {
-        // Wait a bit longer to ensure the partner is ready to receive
         setTimeout(() => {
-          console.log('Initiating connection to partner:', data.partnerPeerId);
           const conn = this.peer.connect(data.partnerPeerId);
           if (conn) this.handleIncomingDataConnection(conn);
         }, 1000);
@@ -432,7 +417,6 @@ class Omego {
   }
 
   findNewPartner() {
-    console.log('Skipping and finding new partner...');
 
     // Notify server of skip
     if (this.socket) {
@@ -480,12 +464,6 @@ class Omego {
     const text = this.chatInput.value.trim();
     if (!text) return;
 
-    console.log('Attempting to send message:', text);
-    if (this.dataConn) {
-      console.log('Connection status:', this.dataConn.open ? 'OPEN' : 'CLOSED');
-    } else {
-      console.log('No data connection exists.');
-    }
 
     if (this.dataConn && this.dataConn.open) {
       this.dataConn.send({ type: 'chat', text });
@@ -603,7 +581,6 @@ class Omego {
     } else {
       // Neutral message detected
       this.neutralCounter++;
-      console.log(`Neutral message detected. Counter: ${this.neutralCounter}/3`);
 
       if (this.neutralCounter >= 3 && this.currentMood !== 'default') {
         this.applyMood('default');
@@ -616,8 +593,6 @@ class Omego {
 
   applyMood(mood) {
     if (mood === this.currentMood) return;
-
-    console.log(`Applying mood theme: ${mood}`);
     // Remove all existing mood classes
     Object.keys(this.MOODS).forEach(m => {
       document.body.classList.remove(`mood-${m}`);
@@ -633,9 +608,6 @@ class Omego {
       this.currentMood = mood;
       this.addSystemMessage(`✨ Vibe Shift: ${mood.charAt(0).toUpperCase() + mood.slice(1)} mood detected!`);
     } else {
-      if (this.currentMood !== 'default') {
-        this.addSystemMessage(`Vibe reset to default.`);
-      }
       this.currentMood = 'default';
       document.body.classList.remove('mood-active');
     }
@@ -645,7 +617,6 @@ class Omego {
 
 
   addChatMessage(sender, text) {
-    console.log(`Adding chat message from ${sender}: ${text}`);
     const msgDiv = document.createElement('div');
     msgDiv.className = 'message';
 
@@ -673,7 +644,6 @@ class Omego {
   }
 
   addImageMessage(sender, imageData) {
-    console.log(`Adding image message from ${sender}`);
     const msgDiv = document.createElement('div');
     msgDiv.className = 'message message-image';
 
