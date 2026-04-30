@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import readline from 'readline';
+import { Readable } from 'stream';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,19 +16,8 @@ const SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googl
 
 const FOLDER_ID = process.env.GDRIVE_FOLDER_ID || '12576U2OJs2D3zv7luOsuD62DEFpfr6GS'; 
 
-let driveCache = null;
-
 const getAuthClient = async () => {
-  // 1. Try Service Account (Most reliable for Servers)
-  if (fs.existsSync(SERVICE_ACCOUNT_PATH)) {
-    console.log('Using service-account.json for Google Drive...');
-    return new google.auth.GoogleAuth({
-      keyFile: SERVICE_ACCOUNT_PATH,
-      scopes: SCOPES,
-    });
-  }
-
-  // 2. Try Environment Variables (OAuth2)
+  // 1. Try Environment Variables (OAuth2 - Production)
   if (process.env.GDRIVE_CLIENT_SECRET) {
     console.log('Detected GDRIVE_CLIENT_SECRET environment variable...');
     try {
@@ -47,7 +37,7 @@ const getAuthClient = async () => {
     }
   }
 
-  // 3. Fallback to local OAuth2 files
+  // 2. Try Local OAuth2 files (client_secret.json + token.json)
   if (fs.existsSync(CLIENT_SECRET_PATH)) {
     console.log('Using local client_secret.json for Google Drive...');
     const content = fs.readFileSync(CLIENT_SECRET_PATH);
@@ -65,6 +55,16 @@ const getAuthClient = async () => {
     if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
       return await getNewToken(oAuth2Client);
     }
+  }
+
+  // 3. Try Service Account (Fallback)
+  if (fs.existsSync(SERVICE_ACCOUNT_PATH)) {
+    console.log('Falling back to service-account.json for Google Drive...');
+    const auth = new google.auth.GoogleAuth({
+      keyFile: SERVICE_ACCOUNT_PATH,
+      scopes: SCOPES,
+    });
+    return await auth.getClient();
   }
 
   console.error('--- GOOGLE DRIVE ERROR: No valid credentials found (Service Account, Env Vars, or Local Files) ---');
@@ -123,7 +123,7 @@ export const uploadToDrive = async (fileName, fileContent, mimeType = 'text/plai
   
       const media = {
         mimeType: mimeType,
-        body: bodyData,
+        body: Readable.from(bodyData), // Wrap in a Readable stream to avoid .pipe() errors
       };
 
     const response = await driveInstance.files.create({
@@ -140,4 +140,5 @@ export const uploadToDrive = async (fileName, fileContent, mimeType = 'text/plai
     return null;
   }
 };
+
 
