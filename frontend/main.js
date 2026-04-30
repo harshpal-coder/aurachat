@@ -18,6 +18,10 @@ class Omego {
     this.peer = null;
     this.peerId = null;
     this.socket = null;
+    
+    // Base URL for API calls
+    const envUrl = import.meta.env.VITE_BACKEND_URL;
+    this.backendUrl = envUrl || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : `${window.location.protocol}//${window.location.hostname}:3001`);
 
     // UI Elements
     this.landingPage = document.getElementById('landing-page');
@@ -70,6 +74,8 @@ class Omego {
     this.pwaInstallBtn = document.getElementById('pwa-install-btn');
 
     this.deferredPrompt = null;
+    
+    this.deferredPrompt = null;
 
 
     this.currentMode = null;
@@ -88,11 +94,24 @@ class Omego {
       chill: ['chill', 'vibe', 'relax', 'cool', 'bro', 'homie', 'peace', '🤙', '😎']
     };
 
+    this.ytPlayer = null;
+    this.isRemoteChange = false;
+    this.videoType = null; // 'youtube' or 'native'
+
     this.applyInitialTheme();
     this.init();
     this.initSocket();
     this.handlePWAEvents();
     this.checkShortcuts();
+    this.loadYoutubeApi();
+  }
+
+  loadYoutubeApi() {
+    if (window.YT) return;
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   }
 
   applyInitialTheme() {
@@ -180,6 +199,7 @@ class Omego {
         this.reactionsTray.classList.add('hidden');
       }
     });
+    
 
     if (this.reactionBtns) {
       this.reactionBtns.forEach(btn => {
@@ -348,6 +368,12 @@ class Omego {
       } else if (data.type === 'video_stop') {
         this.toggleVideoOverlay(false, false);
         this.addSystemMessage('Stranger closed the video player.');
+      } else if (data.type === 'video_play') {
+        this.handleRemoteVideoAction('play');
+      } else if (data.type === 'video_pause') {
+        this.handleRemoteVideoAction('pause');
+      } else if (data.type === 'video_seek') {
+        this.handleRemoteVideoAction('seek', data.time);
       }
     });
 
@@ -546,33 +572,137 @@ class Omego {
       return;
     }
 
-    const url = prompt("Paste the video URL (Direct link or YouTube):");
-    if (url && url.trim()) {
-      this.startVideo(url.trim(), true);
+    const url = window.prompt('Enter YouTube or Video URL:');
+    if (url) {
+      this.startVideo(url, true);
     }
   }
 
+
   startVideo(url, shouldSync = false) {
     this.toggleVideoOverlay(true);
+    this.videoContent.innerHTML = '';
     
-    // Simple URL detection for embedding
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    const isDirectVideo = url.match(/\.(mp4|webm|ogg|mov)(\?.*)?$/i);
+    const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
+
+    if (isYoutube) {
       const videoId = this.extractYoutubeId(url);
       if (videoId) {
-        this.videoContent.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+        this.videoType = 'youtube';
+        const playerDiv = document.createElement('div');
+        playerDiv.id = 'yt-player-element';
+        this.videoContent.appendChild(playerDiv);
+
+        this.ytPlayer = new window.YT.Player('yt-player-element', {
+          height: '100%',
+          width: '100%',
+          videoId: videoId,
+          playerVars: {
+            'autoplay': 1,
+            'controls': 1,
+            'rel': 0,
+            'origin': window.location.origin
+          },
+          events: {
+            'onStateChange': (event) => this.handleYoutubeStateChange(event)
+          }
+        });
       } else {
         this.addSystemMessage('Invalid YouTube URL.');
         this.toggleVideoOverlay(false);
         return;
       }
+    } else if (isDirectVideo) {
+      this.videoType = 'native';
+      const video = document.createElement('video');
+      video.src = url;
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.background = '#000';
+      this.videoContent.appendChild(video);
+
+      video.addEventListener('play', () => this.handleNativeVideoAction('play'));
+      video.addEventListener('pause', () => this.handleNativeVideoAction('pause'));
+      video.addEventListener('seeked', () => this.handleNativeVideoAction('seek', video.currentTime));
     } else {
-      // Treat as direct video link (MP4, WebM, etc.)
-      this.videoContent.innerHTML = `<video src="${url}" controls autoplay playsinline style="width:100%; height:100%;"></video>`;
+      this.videoType = 'iframe';
+      this.videoContent.innerHTML = `<iframe src="${url}" frameborder="0" allowfullscreen allow="autoplay; fullscreen" referrerpolicy="no-referrer" style="width:100%; height:100%; border:none; background:#000;"></iframe>`;
     }
 
     if (shouldSync && this.dataConn && this.dataConn.open) {
       this.dataConn.send({ type: 'video_start', url });
     }
+  }
+
+  handleYoutubeStateChange(event) {
+    if (this.isRemoteChange) return;
+
+    if (event.data === window.YT.PlayerState.PLAYING) {
+      this.syncVideoAction('play');
+    } else if (event.data === window.YT.PlayerState.PAUSED) {
+      this.syncVideoAction('pause');
+    } else if (event.data === window.YT.PlayerState.BUFFERING) {
+      // Potentially a seek, but YouTube API is annoying with seek detection
+      // We'll sync time periodically or on specific events if needed
+      this.syncVideoAction('seek', this.ytPlayer.getCurrentTime());
+    }
+  }
+
+  handleNativeVideoAction(type, time = null) {
+    if (this.isRemoteChange) return;
+    this.syncVideoAction(type, time);
+  }
+
+  syncVideoAction(type, time = null) {
+    if (this.dataConn && this.dataConn.open) {
+      const data = { type: `video_${type}` };
+      if (time !== null) data.time = time;
+      this.dataConn.send(data);
+    }
+  }
+
+  handleRemoteVideoAction(type, time = null) {
+    this.isRemoteChange = true;
+    
+    if (this.videoType === 'youtube' && this.ytPlayer) {
+      if (type === 'play') {
+        this.ytPlayer.playVideo();
+        this.addSystemMessage('Stranger resumed the video.');
+      }
+      else if (type === 'pause') {
+        this.ytPlayer.pauseVideo();
+        this.addSystemMessage('Stranger paused the video.');
+      }
+      else if (type === 'seek') {
+        this.ytPlayer.seekTo(time, true);
+        this.addSystemMessage('Stranger jumped to a different time.');
+      }
+    } else if (this.videoType === 'native') {
+      const video = this.videoContent.querySelector('video');
+      if (video) {
+        if (type === 'play') {
+          video.play();
+          this.addSystemMessage('Stranger resumed the video.');
+        }
+        else if (type === 'pause') {
+          video.pause();
+          this.addSystemMessage('Stranger paused the video.');
+        }
+        else if (type === 'seek') {
+          video.currentTime = time;
+          this.addSystemMessage('Stranger jumped to a different time.');
+        }
+      }
+    }
+
+    // Reset the flag after a short delay to allow API calls to resolve
+    setTimeout(() => {
+      this.isRemoteChange = false;
+    }, 500);
   }
 
   extractYoutubeId(url) {
@@ -849,8 +979,10 @@ class Omego {
     if (!this.modalContainer) return;
 
     this.modalContainer.classList.remove('hidden');
-    this.safetyModal.classList.add('hidden');
-    this.privacyModal.classList.add('hidden');
+    if (this.safetyModal) this.safetyModal.classList.add('hidden');
+    if (this.privacyModal) this.privacyModal.classList.add('hidden');
+    if (this.agreementModal) this.agreementModal.classList.add('hidden');
+    if (this.videoPickerModal) this.videoPickerModal.classList.add('hidden');
 
     if (type === 'safety') {
       this.safetyModal.classList.remove('hidden');
@@ -858,17 +990,19 @@ class Omego {
       this.privacyModal.classList.remove('hidden');
     } else if (type === 'agreement') {
       this.agreementModal.classList.remove('hidden');
+    } else if (type === 'video-picker') {
+      this.videoPickerModal.classList.remove('hidden');
     }
-
+    
     document.body.style.overflow = 'hidden'; // Prevent scrolling
   }
 
   hideModals() {
-    if (!this.modalContainer) return;
-    this.modalContainer.classList.add('hidden');
-    this.safetyModal.classList.add('hidden');
-    this.privacyModal.classList.add('hidden');
-    this.agreementModal.classList.add('hidden');
+    if (this.modalContainer) this.modalContainer.classList.add('hidden');
+    if (this.safetyModal) this.safetyModal.classList.add('hidden');
+    if (this.privacyModal) this.privacyModal.classList.add('hidden');
+    if (this.agreementModal) this.agreementModal.classList.add('hidden');
+    if (this.videoPickerModal) this.videoPickerModal.classList.add('hidden');
     document.body.style.overflow = ''; // Restore scrolling
   }
 }
