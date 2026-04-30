@@ -72,56 +72,165 @@ const saveLog = async (matchId) => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const baseFilename = `chat_${timestamp}_${matchId}`;
   
-  // 1. Process messages for text log and upload images separately
-  let logContentLines = [];
+  let htmlMessages = "";
   
   for (let i = 0; i < log.messages.length; i++) {
     const m = log.messages[i];
+    const isSystem = m.sender === 'System';
+    const senderClass = isSystem ? 'system' : 'user';
+    
     if (m.type === 'image') {
       const mimeType = m.data.match(/data:([^;]+);/)?.[1] || 'image/png';
       const extension = mimeType.split('/')[1] || 'png';
       const imgFilename = `${baseFilename}_img${i}.${extension}`;
       
-      // Upload image to Drive (Await to ensure it's captured before process might end)
       await uploadToDrive(imgFilename, m.data, mimeType);
       
-      // Save locally if directory exists
       if (fs.existsSync(logsDir)) {
         const imgPath = path.join(logsDir, imgFilename);
         const buffer = Buffer.from(m.data.split(',')[1], 'base64');
         try {
           await fs.promises.writeFile(imgPath, buffer);
-          console.log(`Saved local image: ${imgFilename}`);
         } catch (err) {
           console.error(`Error saving local image ${imgFilename}:`, err);
         }
       }
       
-      logContentLines.push(`[${m.time}] ${m.sender}: [Sent Image: ${imgFilename}]`);
+      htmlMessages += `
+        <div class="message ${senderClass}">
+          <div class="bubble">
+            <div class="sender-id">${m.sender}</div>
+            <div class="image-attachment">
+              <img src="${m.data}" alt="Sent Image" style="max-width: 100%; border-radius: 8px; margin-top: 5px;">
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 5px;">Saved as: ${imgFilename}</p>
+            </div>
+            <div class="timestamp">${m.time}</div>
+          </div>
+        </div>`;
     } else {
-      logContentLines.push(`[${m.time}] ${m.sender}: ${m.text}`);
+      htmlMessages += `
+        <div class="message ${senderClass}">
+          <div class="bubble">
+            <div class="sender-id">${m.sender}</div>
+            <div class="text">${m.text}</div>
+            <div class="timestamp">${m.time}</div>
+          </div>
+        </div>`;
     }
   }
 
-  const logContent = logContentLines.join('\n');
-  const header = `Chat Session: ${matchId}\nStarted: ${log.startTime}\nEnded: ${new Date().toISOString()}\n-----------------------------------\n`;
-  const fullContent = header + logContent;
-  const txtFilename = `${baseFilename}.txt`;
-  const filePath = path.join(logsDir, txtFilename);
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Log - ${matchId}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --container-bg: rgba(30, 41, 59, 0.7);
+            --bubble-user: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --bubble-text: #ffffff;
+            --timestamp-color: rgba(255, 255, 255, 0.6);
+            --sender-color: #94a3b8;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .log-container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--container-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header h1 { font-size: 1.2rem; margin: 0; color: #e2e8f0; }
+        .header p { font-size: 0.8rem; color: var(--sender-color); margin: 5px 0 0; }
+        
+        .chat-area { display: flex; flex-direction: column; gap: 16px; }
+        
+        .message { display: flex; flex-direction: column; max-width: 85%; }
+        .message.user { align-self: flex-start; }
+        
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            background: var(--bubble-user);
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .message.user .bubble { border-bottom-left-radius: 4px; }
+        
+        .sender-id {
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: rgba(255, 255, 255, 0.9);
+            word-break: break-all;
+        }
+        .text { font-size: 0.95rem; line-height: 1.5; word-wrap: break-word; }
+        .timestamp {
+            font-size: 0.65rem;
+            margin-top: 6px;
+            text-align: right;
+            color: var(--timestamp-color);
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--sender-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="log-container">
+        <div class="header">
+            <h1>AuraChat Log</h1>
+            <p>Session ID: ${matchId}</p>
+            <p>Started: ${new Date(log.startTime).toLocaleString()}</p>
+            <p>Ended: ${new Date().toLocaleString()}</p>
+        </div>
+        <div class="chat-area">
+            ${htmlMessages}
+        </div>
+        <div class="footer">
+            Generated by AuraChat &bull; Secure Log Storage
+        </div>
+    </div>
+</body>
+</html>`;
 
-  // 2. Save text log locally (if possible)
+  const htmlFilename = `${baseFilename}.html`;
+  const filePath = path.join(logsDir, htmlFilename);
+
   if (fs.existsSync(logsDir)) {
     try {
-      await fs.promises.writeFile(filePath, fullContent);
-      console.log(`Saved local chat log: ${txtFilename}`);
+      await fs.promises.writeFile(filePath, htmlContent);
+      console.log(`Saved local HTML log: ${htmlFilename}`);
     } catch (err) {
-      console.error(`Error saving local log ${txtFilename}:`, err);
+      console.error(`Error saving local log ${htmlFilename}:`, err);
     }
   }
 
-  // 3. Upload text log to Google Drive
-  await uploadToDrive(txtFilename, fullContent);
-
+  await uploadToDrive(htmlFilename, htmlContent, 'text/html');
   matchLogs.delete(matchId);
 };
 
