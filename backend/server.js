@@ -62,7 +62,7 @@ try {
   console.warn('Could not create local logs directory (this is normal in production):', e.message);
 }
 
-const saveLog = (matchId) => {
+const saveLog = async (matchId) => {
   const log = matchLogs.get(matchId);
   if (!log || log.messages.length === 0) {
     matchLogs.delete(matchId);
@@ -70,23 +70,57 @@ const saveLog = (matchId) => {
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const filename = `chat_${timestamp}_${matchId}.txt`;
-  const filePath = path.join(logsDir, filename);
-
-  const logContent = log.messages.map(m => `[${m.time}] ${m.sender}: ${m.text}`).join('\n');
-  const header = `Chat Session: ${matchId}\nStarted: ${log.startTime}\nEnded: ${new Date().toISOString()}\n-----------------------------------\n`;
-  const fullContent = header + logContent;
-
-  // 1. Save locally (if possible)
-  if (fs.existsSync(logsDir)) {
-    fs.writeFile(filePath, fullContent, (err) => {
-      if (err) console.error(`Error saving local log ${filename}:`, err);
-      else console.log(`Saved local chat log: ${filename}`);
-    });
+  const baseFilename = `chat_${timestamp}_${matchId}`;
+  
+  // 1. Process messages for text log and upload images separately
+  let logContentLines = [];
+  
+  for (let i = 0; i < log.messages.length; i++) {
+    const m = log.messages[i];
+    if (m.type === 'image') {
+      const mimeType = m.data.match(/data:([^;]+);/)?.[1] || 'image/png';
+      const extension = mimeType.split('/')[1] || 'png';
+      const imgFilename = `${baseFilename}_img${i}.${extension}`;
+      
+      // Upload image to Drive (Await to ensure it's captured before process might end)
+      await uploadToDrive(imgFilename, m.data, mimeType);
+      
+      // Save locally if directory exists
+      if (fs.existsSync(logsDir)) {
+        const imgPath = path.join(logsDir, imgFilename);
+        const buffer = Buffer.from(m.data.split(',')[1], 'base64');
+        try {
+          await fs.promises.writeFile(imgPath, buffer);
+          console.log(`Saved local image: ${imgFilename}`);
+        } catch (err) {
+          console.error(`Error saving local image ${imgFilename}:`, err);
+        }
+      }
+      
+      logContentLines.push(`[${m.time}] ${m.sender}: [Sent Image: ${imgFilename}]`);
+    } else {
+      logContentLines.push(`[${m.time}] ${m.sender}: ${m.text}`);
+    }
   }
 
-  // 2. Upload to Google Drive (Independent of local save)
-  uploadToDrive(filename, fullContent);
+  const logContent = logContentLines.join('\n');
+  const header = `Chat Session: ${matchId}\nStarted: ${log.startTime}\nEnded: ${new Date().toISOString()}\n-----------------------------------\n`;
+  const fullContent = header + logContent;
+  const txtFilename = `${baseFilename}.txt`;
+  const filePath = path.join(logsDir, txtFilename);
+
+  // 2. Save text log locally (if possible)
+  if (fs.existsSync(logsDir)) {
+    try {
+      await fs.promises.writeFile(filePath, fullContent);
+      console.log(`Saved local chat log: ${txtFilename}`);
+    } catch (err) {
+      console.error(`Error saving local log ${txtFilename}:`, err);
+    }
+  }
+
+  // 3. Upload text log to Google Drive
+  await uploadToDrive(txtFilename, fullContent);
 
   matchLogs.delete(matchId);
 };
@@ -195,7 +229,24 @@ io.on('connection', (socket) => {
       if (log) {
         log.messages.push({
           sender: socket.id,
+          type: 'text',
           text: text,
+          time: new Date().toLocaleTimeString()
+        });
+      }
+    }
+  });
+
+  socket.on('chat_image', (imageData) => {
+    const match = activeMatches.get(socket.id);
+    if (match && match.matchId) {
+      const log = matchLogs.get(match.matchId);
+      if (log) {
+        console.log(`Logging image for match ${match.matchId} from ${socket.id}`);
+        log.messages.push({
+          sender: socket.id,
+          type: 'image',
+          data: imageData,
           time: new Date().toLocaleTimeString()
         });
       }

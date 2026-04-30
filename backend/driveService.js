@@ -99,22 +99,22 @@ const getNewToken = (oAuth2Client) => {
   });
 };
 
-export const uploadToDrive = async (fileName, fileContent) => {
-  try {
-    const auth = await getAuthClient();
-    if (!auth) return;
-
-    const driveInstance = google.drive({ version: 'v3', auth });
-
-    const fileMetadata = {
-      name: fileName,
-      parents: [FOLDER_ID],
-    };
-
-    const media = {
-      mimeType: 'text/plain',
-      body: fileContent,
-    };
+export const uploadToDrive = async (fileName, fileContent, mimeType = 'text/plain') => {
+    try {
+      const auth = await getAuthClient();
+      if (!auth) return;
+  
+      const driveInstance = google.drive({ version: 'v3', auth });
+  
+      const fileMetadata = {
+        name: fileName,
+        parents: [FOLDER_ID],
+      };
+  
+      const media = {
+        mimeType: mimeType,
+        body: mimeType.startsWith('image/') ? Buffer.from(fileContent.split(',')[1], 'base64') : fileContent,
+      };
 
     const response = await driveInstance.files.create({
       resource: fileMetadata,

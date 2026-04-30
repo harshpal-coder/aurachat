@@ -334,6 +334,10 @@ class Omego {
       } else if (data.type === 'image') {
         this.addImageMessage('Stranger', data.imageData);
         this.showTyping(false);
+        // Log received image to server as well (in case stranger's client is old)
+        if (this.socket) {
+          this.socket.emit('chat_image', data.imageData);
+        }
       } else if (data.type === 'reaction') {
         this.showReaction(data.emoji);
       } else if (data.type === 'mood') {
@@ -526,9 +530,9 @@ class Omego {
       this.dataConn.send({ type: 'image', imageData });
       this.addImageMessage('You', imageData);
       
-      // Emit to server for logging (just a placeholder for image)
+      // Emit to server for logging the actual image
       if (this.socket) {
-        this.socket.emit('chat_message', '[Sent an image]');
+        this.socket.emit('chat_image', imageData);
       }
       
       this.imageInput.value = '';
