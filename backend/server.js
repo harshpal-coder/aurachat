@@ -76,11 +76,15 @@ const saveLog = async (matchId) => {
   console.log(`[Log] Starting log save process for match: ${matchId}`);
   
   let htmlMessages = "";
+  const uniqueSenders = [...new Set(log.messages.filter(m => m.sender !== 'System').map(m => m.sender))];
   
   for (let i = 0; i < log.messages.length; i++) {
     const m = log.messages[i];
     const isSystem = m.sender === 'System';
-    const senderClass = isSystem ? 'system' : 'user';
+    let senderClass = 'system';
+    if (!isSystem) {
+      senderClass = m.sender === uniqueSenders[0] ? 'user-a' : 'user-b';
+    }
     
     if (m.type === 'image') {
       const mimeType = m.data.match(/data:([^;]+);/)?.[1] || 'image/png';
@@ -103,10 +107,10 @@ const saveLog = async (matchId) => {
       htmlMessages += `
         <div class="message ${senderClass}">
           <div class="bubble">
-            <div class="sender-id">${m.sender}</div>
+            <div class="sender-id">${isSystem ? 'SYSTEM' : (senderClass === 'user-a' ? 'You' : 'Partner')}</div>
             <div class="image-attachment">
-              <img src="${m.data}" alt="Sent Image" style="max-width: 100%; border-radius: 8px; margin-top: 5px;">
-              <p style="font-size: 10px; opacity: 0.7; margin-top: 5px;">Saved as: ${imgFilename}</p>
+              <img src="${m.data}" alt="Sent Image">
+              <p class="img-meta">Saved as: ${imgFilename}</p>
             </div>
             <div class="timestamp">${m.time}</div>
           </div>
@@ -115,7 +119,7 @@ const saveLog = async (matchId) => {
       htmlMessages += `
         <div class="message ${senderClass}">
           <div class="bubble">
-            <div class="sender-id">${m.sender}</div>
+            <div class="sender-id">${isSystem ? 'SYSTEM' : (senderClass === 'user-a' ? 'You' : 'Partner')}</div>
             <div class="text">${m.text}</div>
             <div class="timestamp">${m.time}</div>
           </div>
@@ -130,93 +134,203 @@ const saveLog = async (matchId) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Log - ${matchId}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0f172a;
-            --container-bg: rgba(30, 41, 59, 0.7);
-            --bubble-user: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            --bubble-text: #ffffff;
-            --timestamp-color: rgba(255, 255, 255, 0.6);
-            --sender-color: #94a3b8;
+            --bg-color: #030712;
+            --accent-primary: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-secondary: rgba(31, 41, 55, 0.7);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --glass-bg: rgba(17, 24, 39, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
         }
+        
+        * { box-sizing: border-box; }
+        
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             background-color: var(--bg-color);
-            color: white;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+            color: var(--text-main);
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
         }
+
         .log-container {
             width: 100%;
-            max-width: 600px;
-            background: var(--container-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 700px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--glass-border);
         }
-        .header h1 { font-size: 1.2rem; margin: 0; color: #e2e8f0; }
-        .header p { font-size: 0.8rem; color: var(--sender-color); margin: 5px 0 0; }
-        
-        .chat-area { display: flex; flex-direction: column; gap: 16px; }
-        
-        .message { display: flex; flex-direction: column; max-width: 85%; }
-        .message.user { align-self: flex-start; }
-        
-        .bubble {
-            padding: 12px 16px;
-            border-radius: 18px;
-            background: var(--bubble-user);
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 0;
+            background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .session-info {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .info-pill {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
+        }
+
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
             position: relative;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        .message.user .bubble { border-bottom-left-radius: 4px; }
+
+        .message.user-a { align-self: flex-end; }
+        .message.user-b { align-self: flex-start; }
+        .message.system { 
+            align-self: center; 
+            max-width: 100%;
+            opacity: 0.6;
+            font-style: italic;
+            font-size: 0.85rem;
+            margin: 10px 0;
+        }
+
+        .bubble {
+            padding: 14px 20px;
+            border-radius: 22px;
+            position: relative;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .message.user-a .bubble {
+            background: var(--accent-primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.user-b .bubble {
+            background: var(--accent-secondary);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            border-bottom-left-radius: 4px;
+        }
         
+        .message.system .bubble {
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+        }
+
         .sender-id {
             font-size: 0.7rem;
             font-weight: 600;
-            margin-bottom: 4px;
-            color: rgba(255, 255, 255, 0.9);
-            word-break: break-all;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.8;
         }
-        .text { font-size: 0.95rem; line-height: 1.5; word-wrap: break-word; }
+
+        .text {
+            font-size: 1rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+            font-weight: 400;
+        }
+
+        .image-attachment img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin: 8px 0;
+            display: block;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .img-meta {
+            font-size: 0.65rem;
+            opacity: 0.6;
+            margin: 4px 0 0;
+        }
+
         .timestamp {
             font-size: 0.65rem;
-            margin-top: 6px;
+            margin-top: 8px;
+            opacity: 0.5;
             text-align: right;
-            color: var(--timestamp-color);
         }
+
+        .message.user-a .timestamp { color: rgba(255, 255, 255, 0.8); }
+
         .footer {
-            margin-top: 30px;
+            margin-top: 50px;
             text-align: center;
-            font-size: 0.7rem;
-            color: var(--sender-color);
+            padding: 20px;
+            opacity: 0.4;
+            font-size: 0.8rem;
+        }
+
+        .footer-logo {
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
         }
     </style>
 </head>
 <body>
     <div class="log-container">
         <div class="header">
-            <h1>AuraChat Log</h1>
-            <p>Session ID: ${matchId}</p>
-            <p>Started: ${new Date(log.startTime).toLocaleString()}</p>
-            <p>Ended: ${new Date().toLocaleString()}</p>
+            <h1>AuraChat</h1>
+            <div class="session-info">
+                <span class="info-pill">ID: ${matchId.split('_').pop()}</span>
+                <span class="info-pill">Started: ${new Date(log.startTime).toLocaleTimeString()}</span>
+                <span class="info-pill">Ended: ${new Date().toLocaleTimeString()}</span>
+            </div>
         </div>
+        
         <div class="chat-area">
             ${htmlMessages}
         </div>
+        
         <div class="footer">
-            Generated by AuraChat &bull; Secure Log Storage
+            <div class="footer-logo">AURACHAT</div>
+            <div>Secure End-to-End Encrypted Session Log</div>
+            <div style="margin-top: 10px; font-size: 0.7rem;">&copy; ${new Date().getFullYear()} AuraChat Inc.</div>
         </div>
     </div>
 </body>
