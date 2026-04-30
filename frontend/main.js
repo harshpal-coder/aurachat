@@ -4,14 +4,7 @@ import Peer from 'peerjs';
 import { io } from 'socket.io-client';
 import Sentiment from 'sentiment';
 
-// Register Service Worker for PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => {
-      console.log('Service Worker registration failed: ', err);
-    });
-  });
-}
+
 
 class Omego {
   constructor() {
@@ -67,15 +60,8 @@ class Omego {
     this.confirmContinueBtn = document.getElementById('confirm-continue-btn');
 
     // New UI Elements
-    this.reactionToggle = document.getElementById('reaction-toggle');
-    this.reactionsTray = document.getElementById('reactions-tray');
-    this.reactionsContainer = document.getElementById('reactions-container');
-    this.reactionBtns = document.querySelectorAll('.reaction-btn');
-    this.pwaInstallBtn = document.getElementById('pwa-install-btn');
 
-    this.deferredPrompt = null;
-    
-    this.deferredPrompt = null;
+
 
 
     this.currentMode = null;
@@ -101,7 +87,7 @@ class Omego {
     this.applyInitialTheme();
     this.init();
     this.initSocket();
-    this.handlePWAEvents();
+
     this.checkShortcuts();
     this.loadYoutubeApi();
   }
@@ -187,29 +173,7 @@ class Omego {
       this.closeVideoBtn.addEventListener('click', () => this.toggleVideoOverlay(false));
     }
 
-    if (this.reactionToggle) {
-      this.reactionToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.reactionsTray.classList.toggle('hidden');
-      });
-    }
 
-    document.addEventListener('click', (e) => {
-      if (this.reactionsTray && !this.reactionsTray.contains(e.target) && e.target !== this.reactionToggle) {
-        this.reactionsTray.classList.add('hidden');
-      }
-    });
-    
-
-    if (this.reactionBtns) {
-      this.reactionBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const emoji = btn.getAttribute('data-emoji');
-          this.sendReaction(emoji);
-          this.reactionsTray.classList.add('hidden');
-        });
-      });
-    }
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -358,8 +322,7 @@ class Omego {
         if (this.socket) {
           this.socket.emit('chat_image', data.imageData);
         }
-      } else if (data.type === 'reaction') {
-        this.showReaction(data.emoji);
+
       } else if (data.type === 'mood') {
         this.applyMood(data.mood);
       } else if (data.type === 'video_start') {
@@ -725,50 +688,9 @@ class Omego {
     }
   }
 
-  sendReaction(emoji) {
-    if (this.dataConn && this.dataConn.open) {
-      this.dataConn.send({ type: 'reaction', emoji });
-      this.showReaction(emoji);
-    } else {
-      this.addSystemMessage('Connect with someone first to send reactions, bestie.');
-    }
-  }
 
-  handlePWAEvents() {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the event so it can be triggered later.
-      this.deferredPrompt = e;
-      // Update UI notify the user they can install the PWA
-      if (this.pwaInstallBtn) {
-        this.pwaInstallBtn.classList.remove('hidden');
-        this.pwaInstallBtn.addEventListener('click', () => this.installPWA());
-      }
-    });
 
-    window.addEventListener('appinstalled', (evt) => {
-      // Log install to analytics or update UI
-      console.log('Omego was installed');
-      if (this.pwaInstallBtn) this.pwaInstallBtn.classList.add('hidden');
-      this.deferredPrompt = null;
-    });
-  }
 
-  async installPWA() {
-    if (!this.deferredPrompt) return;
-    
-    // Show the install prompt
-    this.deferredPrompt.prompt();
-    
-    // Wait for the user to respond to the prompt
-    const { outcome } = await this.deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
-    
-    // We've used the prompt, and can't use it again, throw it away
-    this.deferredPrompt = null;
-    if (this.pwaInstallBtn) this.pwaInstallBtn.classList.add('hidden');
-  }
 
   checkShortcuts() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -784,24 +706,7 @@ class Omego {
   
   // ... rest of the file ...
 
-  showReaction(emoji) {
-    if (!this.reactionsContainer) return;
 
-    const reactionEl = document.createElement('div');
-    reactionEl.className = 'floating-emoji';
-    reactionEl.textContent = emoji;
-
-    // Randomize horizontal position slightly
-    const leftPos = 40 + Math.random() * 20; // 40% to 60% range
-    reactionEl.style.left = `${leftPos}%`;
-
-    this.reactionsContainer.appendChild(reactionEl);
-
-    // Remove element after animation finishes
-    setTimeout(() => {
-      reactionEl.remove();
-    }, 2000);
-  }
 
   detectMood(text) {
     const analysis = this.sentiment.analyze(text);

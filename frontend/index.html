@@ -4,10 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/png" href="/favicon.png" />
-  <link rel="apple-touch-icon" href="/favicon.png" />
-  <link rel="manifest" href="/manifest.json" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#0a0a0a" />
   
   <title>Omego | Best Omegle Alternative - Unfiltered Random Chat</title>
   
@@ -71,10 +68,7 @@
       </div>
       <nav class="app-nav">
         <div id="peer-id-display" class="id-badge" style="display: none;">Your ID: <span id="my-id">...</span></div>
-        <button id="pwa-install-btn" class="btn-primary btn-small hidden" style="margin-right: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-          <i data-lucide="download" style="width: 14px; height: 14px; margin-right: 4px;"></i>
-          Install App
-        </button>
+
         <button id="theme-toggle" class="btn-icon" title="Toggle Theme">
           <i data-lucide="sun" id="theme-icon"></i>
         </button>
@@ -220,7 +214,7 @@
             <div class="chat-messages-scroll" id="chat-messages">
               <div class="system-message">You're now talking to a random stranger. Vibe check in progress...</div>
             </div>
-            <div id="reactions-container" class="reactions-overlay"></div>
+
             <div id="typing-container" class="hidden">
               <div class="typing-indicator">
                 <span>Stranger is typing</span>
@@ -243,15 +237,7 @@
             <div class="input-wrapper">
               <textarea id="chat-input" placeholder="Type a message (No Cap)..." rows="1"></textarea>
               <div class="input-actions">
-                <button id="reaction-toggle" class="btn-icon-small" title="Reactions">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                    <line x1="9" y1="9" x2="9.01" y2="9" />
-                    <line x1="15" y1="9" x2="15.01" y2="9" />
-                  </svg>
-                </button>
+
                 <button id="image-btn" class="btn-icon-small" title="Send Image">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -269,14 +255,7 @@
                 </button>
                 <input type="file" id="image-input" accept="image/*" hidden />
 
-                <div id="reactions-tray" class="reactions-tray hidden">
-                  <button class="reaction-btn" data-emoji="🔥">🔥</button>
-                  <button class="reaction-btn" data-emoji="❤️">❤️</button>
-                  <button class="reaction-btn" data-emoji="😂">😂</button>
-                  <button class="reaction-btn" data-emoji="💀">💀</button>
-                  <button class="reaction-btn" data-emoji="✨">✨</button>
-                  <button class="reaction-btn" data-emoji="🙌">🙌</button>
-                </div>
+
               </div>
             </div>
 
