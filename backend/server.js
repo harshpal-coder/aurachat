@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { uploadToDrive } from './driveService.js';
+import html_to_pdf from 'html-pdf-node';
 import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
@@ -218,19 +219,28 @@ const saveLog = async (matchId) => {
 </body>
 </html>`;
 
-  const htmlFilename = `${baseFilename}.html`;
-  const filePath = path.join(logsDir, htmlFilename);
+  // Generate PDF from HTML
+  const pdfOptions = { format: 'A4', margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } };
+  const pdfFile = { content: htmlContent };
 
-  if (fs.existsSync(logsDir)) {
-    try {
-      await fs.promises.writeFile(filePath, htmlContent);
-      console.log(`Saved local HTML log: ${htmlFilename}`);
-    } catch (err) {
-      console.error(`Error saving local log ${htmlFilename}:`, err);
+  try {
+    const pdfBuffer = await html_to_pdf.generatePdf(pdfFile, pdfOptions);
+    const pdfFilename = `${baseFilename}.pdf`;
+    const filePath = path.join(logsDir, pdfFilename);
+
+    if (fs.existsSync(logsDir)) {
+      await fs.promises.writeFile(filePath, pdfBuffer);
+      console.log(`Saved local PDF log: ${pdfFilename}`);
     }
+
+    await uploadToDrive(pdfFilename, pdfBuffer, 'application/pdf');
+    console.log(`Uploaded PDF log to Drive: ${pdfFilename}`);
+  } catch (pdfErr) {
+    console.error('Error generating PDF, falling back to HTML:', pdfErr);
+    const htmlFilename = `${baseFilename}.html`;
+    await uploadToDrive(htmlFilename, htmlContent, 'text/html');
   }
 
-  await uploadToDrive(htmlFilename, htmlContent, 'text/html');
   matchLogs.delete(matchId);
 };
 

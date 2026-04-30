@@ -15,6 +15,7 @@
     "express-rate-limit": "^8.4.1",
     "googleapis": "^171.4.0",
     "helmet": "^8.1.0",
+    "html-pdf-node": "^1.0.8",
     "socket.io": "^4.8.3"
   }
 }
