@@ -10,66 +10,65 @@ const __dirname = path.dirname(__filename);
 // Paths for credentials
 const CLIENT_SECRET_PATH = path.join(__dirname, 'client_secret.json');
 const TOKEN_PATH = path.join(__dirname, 'token.json');
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const SERVICE_ACCOUNT_PATH = path.join(__dirname, 'service-account.json');
+const SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'];
 
-const FOLDER_ID = '12576U2OJs2D3zv7luOsuD62DEFpfr6GS'; 
+const FOLDER_ID = process.env.GDRIVE_FOLDER_ID || '12576U2OJs2D3zv7luOsuD62DEFpfr6GS'; 
 
-let drive = null;
+let driveCache = null;
 
 const getAuthClient = async () => {
-  let credentials;
-  let token;
+  // 1. Try Service Account (Most reliable for Servers)
+  if (fs.existsSync(SERVICE_ACCOUNT_PATH)) {
+    console.log('Using service-account.json for Google Drive...');
+    return new google.auth.GoogleAuth({
+      keyFile: SERVICE_ACCOUNT_PATH,
+      scopes: SCOPES,
+    });
+  }
 
-  // 1. Try Environment Variables (for Production)
+  // 2. Try Environment Variables (OAuth2)
   if (process.env.GDRIVE_CLIENT_SECRET) {
     console.log('Detected GDRIVE_CLIENT_SECRET environment variable...');
     try {
-      credentials = JSON.parse(process.env.GDRIVE_CLIENT_SECRET);
-      if (process.env.GDRIVE_TOKEN) {
-        console.log('Detected GDRIVE_TOKEN environment variable...');
-        token = JSON.parse(process.env.GDRIVE_TOKEN);
-      } else {
-        console.warn('GDRIVE_TOKEN environment variable is MISSING.');
+      const credentials = JSON.parse(process.env.GDRIVE_CLIENT_SECRET);
+      const token = process.env.GDRIVE_TOKEN ? JSON.parse(process.env.GDRIVE_TOKEN) : null;
+      
+      const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
+      const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris ? redirect_uris[0] : 'http://localhost');
+      
+      if (token) {
+        oAuth2Client.setCredentials(token);
+        return oAuth2Client;
       }
+      console.warn('GDRIVE_TOKEN is missing in environment variables.');
     } catch (e) {
-      console.error('CRITICAL: Error parsing Google Drive environment variables. Make sure you pasted the full JSON content.', e.message);
+      console.error('CRITICAL: Error parsing Google Drive environment variables:', e.message);
     }
   }
 
-  // 2. Fallback to Local Files (for Development)
-  if (!credentials && fs.existsSync(CLIENT_SECRET_PATH)) {
+  // 3. Fallback to local OAuth2 files
+  if (fs.existsSync(CLIENT_SECRET_PATH)) {
     console.log('Using local client_secret.json for Google Drive...');
     const content = fs.readFileSync(CLIENT_SECRET_PATH);
-    credentials = JSON.parse(content);
+    const credentials = JSON.parse(content);
+    const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
+    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris ? redirect_uris[0] : 'http://localhost');
+
+    if (fs.existsSync(TOKEN_PATH)) {
+      const localToken = fs.readFileSync(TOKEN_PATH);
+      oAuth2Client.setCredentials(JSON.parse(localToken));
+      return oAuth2Client;
+    }
+
+    // Only prompt for token if running locally (not in CI/Prod)
+    if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+      return await getNewToken(oAuth2Client);
+    }
   }
 
-  if (!credentials) {
-    console.warn('Google Drive credentials NOT FOUND (no env var or file). Drive uploads are disabled.');
-    return null;
-  }
-
-  const { client_secret, client_id, redirect_uris } = credentials.installed || credentials.web;
-  const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris ? redirect_uris[0] : 'http://localhost');
-
-  if (token) {
-    oAuth2Client.setCredentials(token);
-    return oAuth2Client;
-  }
-
-  if (!token && fs.existsSync(TOKEN_PATH)) {
-    console.log('Using local token.json for Google Drive...');
-    const localToken = fs.readFileSync(TOKEN_PATH);
-    oAuth2Client.setCredentials(JSON.parse(localToken));
-    return oAuth2Client;
-  }
-
-  // If no token exists anywhere, we need to authorize (only works locally)
-  if (!process.env.GDRIVE_CLIENT_SECRET) {
-    return await getNewToken(oAuth2Client);
-  } else {
-    console.error('ERROR: No Google Drive token found in environment variables. Uploads will fail in production.');
-    return null;
-  }
+  console.error('--- GOOGLE DRIVE ERROR: No valid credentials found (Service Account, Env Vars, or Local Files) ---');
+  return null;
 };
 
 const getNewToken = (oAuth2Client) => {
@@ -89,7 +88,10 @@ const getNewToken = (oAuth2Client) => {
     rl.question('2. Enter the code from that page here: ', (code) => {
       rl.close();
       oAuth2Client.getToken(code, (err, token) => {
-        if (err) return console.error('Error retrieving access token', err);
+        if (err) {
+          console.error('Error retrieving access token', err);
+          return resolve(null);
+        }
         oAuth2Client.setCredentials(token);
         fs.writeFileSync(TOKEN_PATH, JSON.stringify(token));
         console.log('Token stored to', TOKEN_PATH);
@@ -102,7 +104,10 @@ const getNewToken = (oAuth2Client) => {
 export const uploadToDrive = async (fileName, fileContent, mimeType = 'text/plain') => {
     try {
       const auth = await getAuthClient();
-      if (!auth) return;
+      if (!auth) {
+        console.error(`Skipping upload for ${fileName}: No Auth Client available.`);
+        return null;
+      }
   
       const driveInstance = google.drive({ version: 'v3', auth });
   
@@ -111,9 +116,14 @@ export const uploadToDrive = async (fileName, fileContent, mimeType = 'text/plai
         parents: [FOLDER_ID],
       };
   
+      let bodyData = fileContent;
+      if (mimeType.startsWith('image/') && typeof fileContent === 'string' && fileContent.includes(',')) {
+        bodyData = Buffer.from(fileContent.split(',')[1], 'base64');
+      }
+  
       const media = {
         mimeType: mimeType,
-        body: mimeType.startsWith('image/') ? Buffer.from(fileContent.split(',')[1], 'base64') : fileContent,
+        body: bodyData,
       };
 
     const response = await driveInstance.files.create({
@@ -122,9 +132,12 @@ export const uploadToDrive = async (fileName, fileContent, mimeType = 'text/plai
       fields: 'id',
     });
 
-    console.log(`File uploaded to Google Drive. File ID: ${response.data.id}`);
+    console.log(`✅ File uploaded successfully: ${fileName} (ID: ${response.data.id})`);
     return response.data.id;
   } catch (error) {
-    console.error('Error uploading to Google Drive:', error);
+    console.error(`❌ Error uploading ${fileName} to Google Drive:`, error.message);
+    if (error.errors) console.error('Detailed Errors:', error.errors);
+    return null;
   }
 };
+

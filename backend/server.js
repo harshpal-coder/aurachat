@@ -73,6 +73,8 @@ const saveLog = async (matchId) => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const baseFilename = `chat_${timestamp}_${matchId}`;
   
+  console.log(`[Log] Starting log save process for match: ${matchId}`);
+  
   let htmlMessages = "";
   
   for (let i = 0; i < log.messages.length; i++) {
@@ -85,13 +87,14 @@ const saveLog = async (matchId) => {
       const extension = mimeType.split('/')[1] || 'png';
       const imgFilename = `${baseFilename}_img${i}.${extension}`;
       
-      await uploadToDrive(imgFilename, m.data, mimeType);
+      // Upload image to Drive
+      uploadToDrive(imgFilename, m.data, mimeType).catch(err => console.error(`Failed to upload image ${imgFilename}:`, err));
       
       if (fs.existsSync(logsDir)) {
         const imgPath = path.join(logsDir, imgFilename);
         const buffer = Buffer.from(m.data.split(',')[1], 'base64');
         try {
-          await fs.promises.writeFile(imgPath, buffer);
+          fs.writeFileSync(imgPath, buffer);
         } catch (err) {
           console.error(`Error saving local image ${imgFilename}:`, err);
         }
@@ -219,30 +222,37 @@ const saveLog = async (matchId) => {
 </body>
 </html>`;
 
-  // Generate PDF from HTML
-  const pdfOptions = { format: 'A4', margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } };
-  const pdfFile = { content: htmlContent };
+  // Always save local HTML as a backup first
+  if (fs.existsSync(logsDir)) {
+    const htmlFilename = `${baseFilename}.html`;
+    fs.writeFileSync(path.join(logsDir, htmlFilename), htmlContent);
+    console.log(`[Log] Saved local HTML backup: ${htmlFilename}`);
+  }
 
+  // Attempt PDF generation
   try {
+    const pdfOptions = { format: 'A4', margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } };
+    const pdfFile = { content: htmlContent };
+    
+    console.log(`[Log] Generating PDF for ${matchId}...`);
     const pdfBuffer = await html_to_pdf.generatePdf(pdfFile, pdfOptions);
     const pdfFilename = `${baseFilename}.pdf`;
-    const filePath = path.join(logsDir, pdfFilename);
 
     if (fs.existsSync(logsDir)) {
-      await fs.promises.writeFile(filePath, pdfBuffer);
-      console.log(`Saved local PDF log: ${pdfFilename}`);
+      fs.writeFileSync(path.join(logsDir, pdfFilename), pdfBuffer);
+      console.log(`[Log] Saved local PDF: ${pdfFilename}`);
     }
 
     await uploadToDrive(pdfFilename, pdfBuffer, 'application/pdf');
-    console.log(`Uploaded PDF log to Drive: ${pdfFilename}`);
   } catch (pdfErr) {
-    console.error('Error generating PDF, falling back to HTML:', pdfErr);
+    console.error(`[Log] PDF generation failed for ${matchId}, falling back to HTML upload:`, pdfErr.message);
     const htmlFilename = `${baseFilename}.html`;
     await uploadToDrive(htmlFilename, htmlContent, 'text/html');
   }
 
   matchLogs.delete(matchId);
 };
+
 
 const updateOnlineCount = () => {
   const realCount = io.sockets.sockets.size;
