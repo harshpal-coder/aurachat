@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Free Random Video Chat with Strangers (No Signup) | Omego</title>
+  <meta name="description" content="Looking for free random video chat? Connect instantly with strangers worldwide on Omego. Zero registration, P2P high-speed connections, and 100% unmoderated fun.">
+  <meta name="keywords" content="random video chat, stranger video chat, talk to strangers video, free random chat, cam chat alternatives">
+  <link rel="canonical" href="https://omego.vercel.app/random-video-chat">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://omego.vercel.app/random-video-chat">
+  <meta property="og:title" content="Free Random Video Chat with Strangers (No Signup) | Omego">
+  <meta property="og:description" content="Meet and chat with strangers on the ultimate unmoderated random video chat. High-speed, P2P channels, no signup required.">
+  <meta property="og:image" content="https://omego.vercel.app/og-image.png">
+
+  <!-- Typography & Styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+
+  <style>
+    /* Accordion FAQ Styling */
+    details {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      padding: 1.2rem;
+      transition: var(--transition-smooth);
+    }
+    details[open] {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 15px var(--primary-glow);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    summary {
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      outline: none;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-primary);
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    summary::after {
+      content: '+';
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--primary-color);
+      transition: transform 0.3s ease;
+    }
+    details[open] summary::after {
+      content: '−';
+      transform: rotate(180deg);
+    }
+    .faq-answer {
+      margin-top: 1rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+    .seo-meta-nav {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .seo-meta-nav a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: var(--transition-smooth);
+    }
+    .seo-meta-nav a:hover {
+      color: var(--primary-color);
+    }
+  </style>
+
+  <!-- JSON-LD FAQ Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How can I start a random video chat without signing up?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Omego allows you to start video or text chats instantly without registering an account. Simply visit the homepage, confirm that you comply with our age limit, and select start to match in seconds."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is stranger video chat completely private?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Unlike older platforms, Omego utilizes P2P direct channels which means video and audio stream packages travel directly between your browsers, completely bypassing our servers. We never record, process, or save your conversations."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Omego cost anything?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No, Omego is 100% free of charge. We do not feature premium subscriptions, hidden coin tokens, or VIP memberships to unlock standard features."
+          }
+        }
+      ]
+    }
+  </script>
+</head>
+<body class="dark-theme">
+  <div id="app" style="height: auto; min-height: 100vh;">
+    <!-- Sticky Header -->
+    <header class="app-header" style="position: sticky;">
+      <div class="logo">
+        <a href="/" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none;">
+          <span class="omego-icon"></span>
+          <h1 style="color: var(--text-primary); font-size: 1.5rem; font-weight: 700; margin: 0;">Ome<span style="color: var(--primary-color);">go</span></h1>
+        </a>
+      </div>
+      <nav class="app-nav">
+        <a href="/blog" class="btn-text" style="text-decoration: none; font-size: 0.95rem;">Blog</a>
+        <a href="/?start=text" class="btn-primary" style="padding: 0.5rem 1.2rem; font-size: 0.9rem; text-decoration: none; border-radius: 8px; min-height: unset; height: unset; min-width: unset; flex-direction: row; gap: 0.5rem; display: inline-flex;">
+          Start Chatting
+        </a>
+      </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="app-main" style="padding-top: 2rem; justify-content: center; height: auto; min-height: calc(100vh - var(--header-height));">
+      <div class="landing-content-wrapper" style="padding: 0 1.5rem 3rem 1.5rem; width: 100%; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
+        
+        <div class="info-card glass-card">
+          <h1 class="omegle-title" style="margin-bottom: 1.5rem; font-weight: 800; font-size: clamp(2rem, 5vw, 3.2rem);">Random Video Chat with Strangers</h1>
+          
+          <div class="adult-warning-banner" style="margin-bottom: 2rem;">
+            <strong>🔞 18+ WARNING: UNMODERATED HIGH-SPEED VIDEO MATCHING</strong>
+          </div>
+
+          <p>Looking to shake things up and meet interesting, unhinged, or fun people? <strong>Random video chat</strong> sites have been the heart of internet culture since the early 2000s. But modern platforms have commodified the experience, forcing users to pay for matching or sit through hours of spam and marketing bots. At <strong>Omego</strong>, we are bringing back the original, raw excitement of random stranger cams, without the corporate garbage.</p>
+          
+          <p>Connecting with strangers over video is a wild, thrilling experience. You never know who is on the other side of the skip button - a student studying in Tokyo, a musician jamming out in New York, or just someone looking to laugh. Our platform uses state-of-the-art P2P matchmaking to ensure you get lag-free stream connections instantly.</p>
+
+          <h2 style="font-size: 1.8rem; font-weight: 700; margin: 2rem 0 1rem; color: var(--text-primary); background: linear-gradient(to right, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">The P2P Advantage: Pure Fluid Streams</h2>
+          <p>Traditional chat sites route all video streams through central servers, which bottlenecks the bandwidth and results in blurry, lagging video. Omego is built using **WebRTC Peer-to-Peer technology**. Here is why that matters:</p>
+          
+          <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem; line-height: 1.8; color: var(--text-secondary);">
+            <li><strong>HD Clarity:</strong> Your video stream feeds directly into the other person's browser. This guarantees the highest resolution your camera and connection can support.</li>
+            <li><strong>Minimal Latency:</strong> Say goodbye to awkward 3-second delays. The direct P2P connection minimizes ping, so conversations flow perfectly in real time.</li>
+            <li><strong>Ultimate Decentralized Security:</strong> Because we don't route your video packages through our central servers, they cannot be recorded, logged, or intercepted at our end.</li>
+          </ul>
+
+          <h2 style="font-size: 1.8rem; font-weight: 700; margin: 2rem 0 1rem; color: var(--text-primary); background: linear-gradient(to right, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">How to Set Up Your Cam Safely</h2>
+          <p>If you are jumping into stranger video chats, staying anonymous and keeping your system safe is incredibly important. Here are some expert tips:</p>
+          <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem; line-height: 1.8; color: var(--text-secondary);">
+            <li><strong>Manage Permissions:</strong> Only grant camera and microphone access to trusted platforms. Omego will only ask for camera access when you launch a video session.</li>
+            <li><strong>Secure Your Background:</strong> Make sure your camera angle doesn't expose sensitive personal items, school logos, street views, or photos that could pinpoint your real identity.</li>
+            <li><strong>Use a Virtual Camera if Desired:</strong> If you want to share clips, apply filters, or remain partially obscured, you can route your feed through software like OBS virtual camera.</li>
+            <li><strong>Vibe Check & Skip:</strong> The skip button is your superpower. If someone is being weird, creepy, or mid, don't hesitate. Hit ESC or click skip to find a fresh match.</li>
+          </ol>
+
+          <h2 style="font-size: 1.8rem; font-weight: 700; margin: 2.5rem 0 1.5rem; color: var(--text-primary);">Frequently Asked Questions</h2>
+          
+          <details>
+            <summary>How can I start a random video chat without signing up?</summary>
+            <div class="faq-answer">
+              Omego allows you to start video or text chats instantly without registering an account. Simply visit the homepage, confirm that you comply with our age limit, and select start to match in seconds.
+            </div>
+          </details>
+
+          <details>
+            <summary>Is stranger video chat completely private?</summary>
+            <div class="faq-answer">
+              Unlike older platforms, Omego utilizes P2P direct channels which means video and audio stream packages travel directly between your browsers, completely bypassing our servers. We never record, process, or save your conversations.
+            </div>
+          </details>
+
+          <details>
+            <summary>Does Omego cost anything?</summary>
+            <div class="faq-answer">
+              No, Omego is 100% free of charge. We do not feature premium subscriptions, hidden coin tokens, or VIP memberships to unlock standard features.
+            </div>
+          </details>
+
+          <details>
+            <summary>What browsers support WebRTC video chat on Omego?</summary>
+            <div class="faq-answer">
+              Our WebRTC platform is fully supported by all modern, standard browsers including Google Chrome, Safari, Mozilla Firefox, Microsoft Edge, and Brave, on both desktop and mobile devices.
+            </div>
+          </details>
+
+          <!-- Conversion Call to Action -->
+          <div class="chat-controls-card glass-card" style="margin-top: 3rem; text-align: center; background: linear-gradient(135deg, rgba(255, 0, 85, 0.05), rgba(124, 58, 237, 0.05)); border: 1px solid rgba(255, 0, 85, 0.2);">
+            <h3 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">Enter the Stranger Cams Void</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Launch matchmaking instantly. No registration, 100% anonymous stream connections.</p>
+            <a href="/?start=text" class="btn-primary" style="padding: 1rem 2.5rem; font-size: 1.2rem; text-decoration: none; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px var(--primary-glow); margin: 0 auto;">
+              Connect Over Video Now
+            </a>
+          </div>
+
+          <!-- Internal Nav Links for SEO Crawler -->
+          <div class="seo-meta-nav">
+            <a href="/omegle-alternative">← Omegle Alternative</a>
+            <a href="/talk-to-strangers">Talk to Strangers →</a>
+            <a href="/free-chat-online">Free Chat Online →</a>
+            <a href="/blog">Our SEO Blog Directory</a>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer" style="padding: 2rem 0; background: linear-gradient(to top, rgba(5,5,5,1), rgba(5,5,5,0.8));">
+      <p>&copy; 2026 Omego Labs. All rights reserved.</p>
+      <div class="footer-links" style="margin-top: 0.5rem; display: flex; justify-content: center; gap: 1.5rem;">
+        <a href="/terms" style="color: var(--text-secondary); text-decoration: none; font-size: 0.8rem; transition: var(--transition-smooth);">Terms of Service</a>
+        <a href="/terms#privacy" style="color: var(--text-secondary); text-decoration: none; font-size: 0.8rem; transition: var(--transition-smooth);">Privacy Policy</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
