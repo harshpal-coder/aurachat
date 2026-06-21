@@ -1,54 +1,73 @@
-<?xml version="1.0" encoding="UTF-8"?> 
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"> 
-<url>
-  <loc>http://omego.vercel.app/blog</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/omegle-alternative</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/terms.html</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/terms.html#privacy</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/terms.html#guidelines</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/?start=text</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/blog/best-omegle-alternatives-2026</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/blog/is-omegle-safe</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/blog/random-chat-apps-adults</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/blog/sites-like-ometv</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/random-video-chat</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/talk-to-strangers</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/free-chat-online</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/terms</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/terms#privacy</loc>
-</url>
-<url>
-  <loc>http://omego.vercel.app/index.html</loc>
-</url>
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+    http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <url>
+    <loc>https://omego.vercel.app/</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/blog</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/free-chat-online</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/omegle-alternative</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/random-video-chat</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/talk-to-strangers</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/blog/best-omegle-alternatives-2026</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/blog/is-omegle-safe</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/blog/random-chat-apps-adults</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/blog/sites-like-ometv</loc>
+    <lastmod>2026-05-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+  <url>
+    <loc>https://omego.vercel.app/terms</loc>
+    <lastmod>2026-04-29</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.30</priority>
+  </url>
 </urlset>
