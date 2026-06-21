@@ -112,6 +112,32 @@ body.mood-active::before {
   100% { opacity: 0; transform: scale(1.5); }
 }
 
+body.mood-active::after {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  background: radial-gradient(circle at 50% 50%, var(--primary-glow) 0%, transparent 60%);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: -1;
+  animation: vibe-ambient 10s ease-in-out infinite alternate;
+}
+
+@keyframes vibe-ambient {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(5%, 5%) scale(1.1);
+  }
+  100% {
+    transform: translate(-5%, 2%) scale(0.95);
+  }
+}
+
 
 * {
   margin: 0;
@@ -967,6 +993,19 @@ body {
   border: 1px solid rgba(255, 0, 85, 0.2);
   border-bottom-left-radius: 4px;
   color: #fce7f3;
+  box-shadow: 0 4px 15px rgba(255, 0, 85, 0.03);
+}
+
+body.mood-active .message:has(.label-stranger) {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 20%, transparent), color-mix(in srgb, var(--primary-color) 5%, transparent));
+  border-color: color-mix(in srgb, var(--primary-color) 40%, transparent);
+  box-shadow: 0 4px 20px var(--primary-glow);
+}
+
+body.mood-active .message:has(.label-you) {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color) 20%, transparent), color-mix(in srgb, var(--secondary-color) 5%, transparent));
+  border-color: color-mix(in srgb, var(--secondary-color) 40%, transparent);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.1);
 }
 
 .label-you {
@@ -1003,6 +1042,12 @@ body {
   margin-bottom: 0.5rem;
   animation: fadeIn 0.3s ease-out;
   backdrop-filter: blur(10px);
+  transition: background-color 0.8s, border-color 0.8s;
+}
+
+body.mood-active .typing-indicator {
+  background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+  border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
 }
 
 .typing-indicator span {

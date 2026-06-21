@@ -339,8 +339,12 @@ const saveLog = async (matchId) => {
   // Always save local HTML as a backup first
   if (fs.existsSync(logsDir)) {
     const htmlFilename = `${baseFilename}.html`;
-    fs.writeFileSync(path.join(logsDir, htmlFilename), htmlContent);
-    console.log(`[Log] Saved local HTML backup: ${htmlFilename}`);
+    try {
+      fs.writeFileSync(path.join(logsDir, htmlFilename), htmlContent);
+      console.log(`[Log] Saved local HTML backup: ${htmlFilename}`);
+    } catch (writeErr) {
+      console.error(`[Log] Error saving local HTML backup ${htmlFilename}:`, writeErr.message);
+    }
   }
 
   // Attempt PDF generation
@@ -353,20 +357,65 @@ const saveLog = async (matchId) => {
     const pdfFilename = `${baseFilename}.pdf`;
 
     if (fs.existsSync(logsDir)) {
-      fs.writeFileSync(path.join(logsDir, pdfFilename), pdfBuffer);
-      console.log(`[Log] Saved local PDF: ${pdfFilename}`);
+      try {
+        fs.writeFileSync(path.join(logsDir, pdfFilename), pdfBuffer);
+        console.log(`[Log] Saved local PDF: ${pdfFilename}`);
+      } catch (writeErr) {
+        console.error(`[Log] Error writing local PDF ${pdfFilename}:`, writeErr.message);
+      }
     }
 
-    await uploadToDrive(pdfFilename, pdfBuffer, 'application/pdf');
+    try {
+      await uploadToDrive(pdfFilename, pdfBuffer, 'application/pdf');
+    } catch (driveErr) {
+      console.error(`[Log] Google Drive upload failed for PDF:`, driveErr.message);
+    }
   } catch (pdfErr) {
     console.error(`[Log] PDF generation failed for ${matchId}, falling back to HTML upload:`, pdfErr.message);
     const htmlFilename = `${baseFilename}.html`;
-    await uploadToDrive(htmlFilename, htmlContent, 'text/html');
+    try {
+      await uploadToDrive(htmlFilename, htmlContent, 'text/html');
+    } catch (fallbackErr) {
+      console.error(`[Log] Google Drive fallback upload failed:`, fallbackErr.message);
+    }
   }
 
   matchLogs.delete(matchId);
 };
 
+
+const findPartnerForInterests = (interests) => {
+  if (!interests || interests.length === 0) return null;
+  for (let i = 0; i < waitingUsers.length; i++) {
+    const potentialPartner = waitingUsers[i];
+    if (potentialPartner.interests.some(interest => interests.includes(interest))) {
+      return { partner: potentialPartner, index: i };
+    }
+  }
+  return null;
+};
+
+const establishMatch = (socketIdA, socketIdB, peerIdA, peerIdB) => {
+  const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  
+  activeMatches.set(socketIdA, { 
+    partnerSocketId: socketIdB, 
+    partnerPeerId: peerIdB,
+    matchId: matchId
+  });
+  activeMatches.set(socketIdB, { 
+    partnerSocketId: socketIdA, 
+    partnerPeerId: peerIdA,
+    matchId: matchId
+  });
+  
+  matchLogs.set(matchId, {
+    startTime: new Date().toISOString(),
+    messages: []
+  });
+
+  return matchId;
+};
 
 const updateOnlineCount = () => {
   const realCount = io.sockets.sockets.size;
@@ -413,51 +462,22 @@ io.on('connection', (socket) => {
       io.to(partnerSocketId).emit('partner_disconnected');
     }
 
-    // Try to find a match with common interests
     let matchedPartner = null;
     let matchedIndex = -1;
 
-    if (userInterests.length > 0) {
-      for (let i = 0; i < waitingUsers.length; i++) {
-        const potentialPartner = waitingUsers[i];
-        if (potentialPartner.interests.some(interest => userInterests.includes(interest))) {
-          matchedPartner = potentialPartner;
-          matchedIndex = i;
-          console.log(`Found interest-based match! Common interest found.`);
-          break;
-        }
-      }
-    }
-
-    // Fallback to first user in queue if no interest match
-    if (!matchedPartner && waitingUsers.length > 0) {
-      matchedPartner = waitingUsers.shift();
-      console.log(`No interest match. Matching ${socket.id} with first in queue: ${matchedPartner.socketId}`);
-    } else if (matchedPartner) {
+    const matchedResult = findPartnerForInterests(userInterests);
+    if (matchedResult) {
+      matchedPartner = matchedResult.partner;
+      matchedIndex = matchedResult.index;
       waitingUsers.splice(matchedIndex, 1);
       console.log(`Interest matching ${socket.id} with ${matchedPartner.socketId}`);
+    } else if (waitingUsers.length > 0) {
+      matchedPartner = waitingUsers.shift();
+      console.log(`No interest match. Matching ${socket.id} with first in queue: ${matchedPartner.socketId}`);
     }
 
     if (matchedPartner) {
-      const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-      
-      activeMatches.set(socket.id, { 
-        partnerSocketId: matchedPartner.socketId, 
-        partnerPeerId: matchedPartner.peerId,
-        matchId: matchId
-      });
-      activeMatches.set(matchedPartner.socketId, { 
-        partnerSocketId: socket.id, 
-        partnerPeerId: peerId,
-        matchId: matchId
-      });
-      
-      // Initialize log
-      matchLogs.set(matchId, {
-        startTime: new Date().toISOString(),
-        messages: []
-      });
-
+      const matchId = establishMatch(socket.id, matchedPartner.socketId, peerId, matchedPartner.peerId);
       socket.emit('match', { partnerPeerId: matchedPartner.peerId, initiateCall: true });
       io.to(matchedPartner.socketId).emit('match', { partnerPeerId: peerId, initiateCall: false });
     } else {
