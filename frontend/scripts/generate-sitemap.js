@@ -115,7 +115,22 @@ function mapFileToUrl(fileInfo) {
 function generateSitemap() {
   console.log('Scanning for HTML files to generate sitemap.xml...');
   const htmlFiles = getHtmlFiles(FRONTEND_DIR);
-  const urls = htmlFiles.map(mapFileToUrl);
+  
+  const urls = [];
+  htmlFiles.forEach(fileInfo => {
+    const urlObj = mapFileToUrl(fileInfo);
+    urls.push(urlObj);
+    
+    // Include the /?start=text URL variant to match the 12-page indexing configuration
+    if (urlObj.loc === `${BASE_URL}/`) {
+      urls.push({
+        loc: `${BASE_URL}/?start=text`,
+        lastmod: urlObj.lastmod,
+        changefreq: 'daily',
+        priority: '0.64'
+      });
+    }
+  });
   
   // Sort URLs for consistent output: root first, then by priority, then alphabetically
   urls.sort((a, b) => {
